@@ -1,0 +1,4677 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Manager Roster</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f1eb;
+      --panel: #fffdf9;
+      --ink: #1d2521;
+      --muted: #66736d;
+      --line: #d8d0c5;
+      --accent: #0f766e;
+      --accent-dark: #0a5d57;
+      --earned: #047857;
+      --amber: #a15c05;
+      --amber-soft: #fff0d9;
+      --blue: #195d8f;
+      --blue-soft: #e7f2fb;
+      --soft: #e8f5f2;
+      --danger: #9b2c2c;
+      --danger-soft: #fde8e8;
+      --shadow: 0 16px 38px rgba(29, 37, 33, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 40px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 36px;
+      line-height: 1.05;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    h2 {
+      margin-bottom: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .subtitle,
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .subtitle {
+      margin-bottom: 0;
+      font-size: 15px;
+    }
+
+    .top-actions,
+    .actions,
+    .day-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .compact-control {
+      min-width: 150px;
+    }
+
+    .top-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+    }
+
+    .top-control select {
+      height: 42px;
+      min-width: 150px;
+    }
+
+    a,
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a.button,
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    a.button:hover,
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    button.secondary,
+    a.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    button.secondary:hover,
+    a.secondary:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+
+    button.warning {
+      background: var(--amber);
+    }
+
+    button.warning:hover {
+      background: #834900;
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.35fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .manager-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .manager-shell {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .manager-shell > .section-head {
+      display: none;
+    }
+
+    .manager-shell > .section-body {
+      padding: 0;
+    }
+
+    section,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .today-section {
+      display: none;
+      background: var(--panel);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    body[data-page="day"] .today-section {
+      display: block;
+    }
+
+    .today-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .today-tape,
+    .today-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .today-tape {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-style: dashed;
+      background: var(--soft);
+    }
+
+    .today-money {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent-dark);
+    }
+
+    .today-card h3,
+    .today-section h2 {
+      color: var(--ink);
+    }
+
+    .today-card label,
+    .today-card .hint {
+      color: var(--muted);
+    }
+
+    .today-card input,
+    .today-card select {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .today-flags {
+      display: grid;
+      gap: 8px;
+    }
+
+    .today-flag {
+      border-left: 3px solid #d9594c;
+      padding: 10px;
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbf8f3;
+    }
+
+    .inline-head {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .section-body {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 152px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+    }
+
+    .staff-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .staff-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.8fr) minmax(150px, 1fr) minmax(90px, 0.6fr);
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .mini-button {
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .mini-button:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+
+    .day-title {
+      min-height: 40px;
+      display: grid;
+      align-content: center;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .day-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .check {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .check input {
+      width: 18px;
+      min-height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .roster {
+      display: grid;
+      gap: 12px;
+    }
+
+    .day-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .day-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #eee7dc;
+      background: #fffaf2;
+    }
+
+    .coverage {
+      padding: 6px 9px;
+      border-radius: 999px;
+      color: var(--accent-dark);
+      background: var(--soft);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .coverage.gap {
+      color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    .coverage.approved {
+      color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .shift-grid {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) 112px 112px auto;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .day-card-actions {
+      padding: 0 12px 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .actuals {
+      display: grid;
+      gap: 10px;
+    }
+
+    .actual-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(150px, 1fr) 104px 104px 104px auto;
+      gap: 10px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .payroll {
+      display: grid;
+      gap: 10px;
+    }
+
+    .payroll-row {
+      display: grid;
+      grid-template-columns:
+        minmax(180px, 1.3fr)
+        minmax(72px, 0.5fr)
+        minmax(92px, 0.65fr)
+        minmax(92px, 0.65fr)
+        minmax(96px, 0.7fr)
+        minmax(96px, 0.7fr)
+        minmax(108px, 0.75fr)
+        minmax(150px, 0.9fr)
+        minmax(132px, 0.75fr);
+      gap: 10px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .payroll-row label input[type="date"] {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .payroll-value {
+      min-height: 40px;
+      display: grid;
+      align-content: center;
+      font-weight: 800;
+    }
+
+    .payroll-value span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .payroll-value.unpaid {
+      color: var(--danger);
+    }
+
+    .payroll-value.unpaid span {
+      color: var(--danger);
+    }
+
+    .payroll-value.earned {
+      color: var(--earned);
+    }
+
+    .payroll-value.earned span {
+      color: var(--earned);
+    }
+
+    .cashflow-grid {
+      display: grid;
+      grid-template-columns: minmax(190px, 0.82fr) minmax(0, 1.18fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .cashflow-form,
+    .cashflow-analytics {
+      display: grid;
+      gap: 12px;
+    }
+
+    .cashflow-block {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .cashflow-block h3 {
+      grid-column: 1 / -1;
+      margin-bottom: 0;
+    }
+
+    .cashflow-block .full {
+      grid-column: 1 / -1;
+    }
+
+    .photo-preview {
+      min-height: 84px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: #fbf8f3;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .photo-preview img {
+      width: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .cashflow-row {
+      display: grid;
+      grid-template-columns: minmax(96px, 1fr) repeat(6, minmax(74px, 0.72fr));
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .report-filter {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(160px, 1fr)) repeat(2, auto);
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .report-filter button {
+      min-height: 40px;
+    }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .history-head h3 {
+      margin-bottom: 0;
+    }
+
+    .history-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .history-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 1.2fr) minmax(96px, 0.9fr) 80px 92px 92px 92px 92px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .audit-row {
+      display: grid;
+      grid-template-columns:
+        minmax(110px, 0.72fr)
+        minmax(190px, 1.1fr)
+        minmax(260px, 1.45fr)
+        minmax(110px, 0.7fr)
+        minmax(160px, 0.9fr);
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .summary-money-row {
+      grid-template-columns:
+        minmax(230px, 1.3fr)
+        repeat(4, minmax(140px, 0.85fr));
+      gap: 14px;
+    }
+
+    .summary-staff-row {
+      grid-template-columns:
+        minmax(230px, 1.3fr)
+        repeat(3, minmax(150px, 0.85fr));
+      gap: 20px;
+    }
+
+    .summary-staff-row .payroll-value {
+      min-width: 0;
+    }
+
+    .summary-money-row .payroll-value {
+      min-width: 0;
+    }
+
+    .messages {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .message-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      z-index: 20;
+      transform: translate(-50%, 18px);
+      min-width: min(360px, calc(100% - 28px));
+      padding: 14px 16px;
+      border: 1px solid #7dd3fc;
+      border-radius: 8px;
+      background: #f0f9ff;
+      color: #075985;
+      box-shadow: 0 18px 42px rgba(14, 116, 144, 0.22);
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    body[data-page="day"] .staff-settings-section,
+    body[data-page="day"] .roster-controls-section,
+    body[data-page="day"] .roster-section,
+    body[data-page="day"] .actuals-section,
+    body[data-page="day"] .payroll-section,
+    body[data-page="day"] .cashflow-section,
+    body[data-page="day"] .messages-section,
+    body[data-page="day"] .history-section,
+    body[data-page="day"] .summary-section,
+    body[data-page="day"] .audit-section,
+    body[data-page="roster"] .today-section,
+    body[data-page="roster"] .payroll-section,
+    body[data-page="roster"] .cashflow-section,
+    body[data-page="roster"] .history-section,
+    body[data-page="roster"] .summary-section,
+    body[data-page="roster"] .audit-section,
+    body[data-page="payroll"] .today-section,
+    body[data-page="payroll"] .roster-section,
+    body[data-page="payroll"] .roster-controls-section,
+    body[data-page="payroll"] .cashflow-section,
+    body[data-page="payroll"] .messages-section,
+    body[data-page="payroll"] .summary-section,
+    body[data-page="payroll"] .audit-section,
+    body[data-page="cashflow"] .today-section,
+    body[data-page="cashflow"] .roster-section,
+    body[data-page="cashflow"] .roster-controls-section,
+    body[data-page="cashflow"] .staff-settings-section,
+    body[data-page="cashflow"] .actuals-section,
+    body[data-page="cashflow"] .payroll-section,
+    body[data-page="cashflow"] .messages-section,
+    body[data-page="cashflow"] .history-section,
+    body[data-page="cashflow"] .summary-section,
+    body[data-page="cashflow"] .audit-section,
+    body[data-page="dashboard"] .today-section,
+    body[data-page="dashboard"] .staff-settings-section,
+    body[data-page="dashboard"] .actuals-section,
+    body[data-page="dashboard"] .roster-section,
+    body[data-page="dashboard"] .roster-controls-section,
+    body[data-page="dashboard"] .payroll-section,
+    body[data-page="dashboard"] .cashflow-section,
+    body[data-page="dashboard"] .messages-section,
+    body[data-page="dashboard"] .history-section,
+    body[data-page="dashboard"] .audit-section,
+    body[data-page="audit"] .today-section,
+    body[data-page="audit"] .staff-settings-section,
+    body[data-page="audit"] .actuals-section,
+    body[data-page="audit"] .roster-section,
+    body[data-page="audit"] .roster-controls-section,
+    body[data-page="audit"] .payroll-section,
+    body[data-page="audit"] .cashflow-section,
+    body[data-page="audit"] .messages-section,
+    body[data-page="audit"] .summary-section {
+      display: none;
+    }
+
+    .message-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee7dc;
+      background: var(--blue-soft);
+    }
+
+    .message-head strong {
+      color: var(--blue);
+    }
+
+    .message-card textarea {
+      min-height: 132px;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .message-card .actions {
+      padding: 10px 12px 12px;
+    }
+
+    .status {
+      min-height: 20px;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 920px) {
+      header,
+      .layout,
+      .messages {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: stretch;
+      }
+    }
+
+    @media (max-width: 620px) {
+      main {
+        width: min(100% - 20px, 1220px);
+        padding-top: 16px;
+      }
+
+      .top-actions,
+      .actions,
+      .day-actions {
+        align-items: stretch;
+      }
+
+      a.button,
+      button {
+        width: 100%;
+      }
+
+      .staff-row,
+      .shift-grid,
+      .metrics,
+      .actual-row,
+      .payroll-row,
+      .history-row,
+      .audit-row,
+      .cashflow-grid,
+      .cashflow-block,
+      .cashflow-row,
+      .report-filter {
+        grid-template-columns: 1fr;
+      }
+
+      .check {
+        justify-content: flex-start;
+      }
+
+      .day-card-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Manager Roster</h1>
+        <p class="subtitle"><span id="pageDescription">Approve rosters, send shift messages, track actual hours, payroll, and period history.</span> <span id="appVersion"></span></p>
+      </div>
+      <div class="top-actions">
+        <a class="button secondary" href="./manager.html#/day">Day</a>
+        <a class="button secondary" href="./index.html">Order helper</a>
+        <a class="button secondary" href="./staff.html">Staff page</a>
+        <a class="button secondary" href="./manager.html#/roster">Roster</a>
+        <a class="button secondary" href="./manager.html#/payroll">Payroll</a>
+        <a class="button secondary" href="./manager.html#/cashflow">Cash flow</a>
+        <a class="button secondary" href="./manager.html#/summary">Summary</a>
+        <a class="button secondary" href="./manager.html#/audit">Audit</a>
+        <label class="compact-control top-control">
+          Location
+          <select id="locationSelect"></select>
+        </label>
+        <label class="compact-control top-control">
+          Week
+          <select id="weekSelect">
+            <option value="0">Current week</option>
+            <option value="1">Next week</option>
+          </select>
+        </label>
+      </div>
+    </header>
+
+    <div class="layout manager-layout">
+      <section class="manager-shell">
+        <div class="section-head">
+          <h2>Approved Roster</h2>
+          <span id="weekLabel" class="hint"></span>
+        </div>
+        <div class="section-body">
+          <div class="today-section">
+            <div class="section-head">
+              <div>
+                <h2 id="todayTitle">Daily Control</h2>
+                <span id="todaySubtitle" class="hint">Ledger-backed daily cash and payroll checkpoints</span>
+              </div>
+              <label class="compact-control">
+                Day
+                <input id="todayDateInput" type="date">
+              </label>
+            </div>
+            <div class="today-grid" style="padding:16px">
+              <div class="today-tape">
+                <div>
+                  <div class="hint">Known cash in till</div>
+                  <div id="todayCashSource" class="hint">latest known checkpoint</div>
+                </div>
+                <div id="todayKnownCash" class="today-money">$0.00</div>
+              </div>
+
+              <div class="today-card">
+                <h3>Morning open</h3>
+                <div class="field-row">
+                  <label>Opening cash count<input id="todayOpeningCashInput" type="text" inputmode="decimal"></label>
+                  <label>Previous terminal total<input id="todayPreviousTerminalInput" type="text" inputmode="decimal"></label>
+                </div>
+                <p id="todayPreviousTerminalHint" class="hint"></p>
+              </div>
+
+              <div class="today-card">
+                <h3>Actual hours for the day</h3>
+                <div id="todayActualsGrid" class="actuals"></div>
+              </div>
+
+              <div class="today-card">
+                <h3>Staff payout</h3>
+                <div class="field-row">
+                  <label>Staff<select id="todayPayoutStaff"></select></label>
+                  <label>Amount<input id="todayPayoutAmount" type="text" inputmode="decimal"></label>
+                  <label>Paid on<input id="todayPayoutPaidOn" type="date"></label>
+                  <label>Payroll week<select id="todayPayoutWeek"></select></label>
+                </div>
+                <button id="todaySavePayoutButton" class="secondary" type="button">Save payout</button>
+              </div>
+
+              <div class="today-card">
+                <h3>After my shift</h3>
+                <div class="field-row">
+                  <label>Cash count<input id="todayMidCashInput" type="text" inputmode="decimal"></label>
+                  <label>Terminal so far<input id="todayMidTerminalInput" type="text" inputmode="decimal"></label>
+                </div>
+              </div>
+
+              <div class="today-card">
+                <h3>Evening close</h3>
+                <div class="field-row">
+                  <label>Closing cash<input id="todayClosingCashInput" type="text" inputmode="decimal"></label>
+                  <label>Closing terminal<input id="todayClosingTerminalInput" type="text" inputmode="decimal"></label>
+                </div>
+              </div>
+
+              <div class="today-card">
+                <h3>Attention flags</h3>
+                <div id="todayFlags" class="today-flags"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-head inline-head roster-controls-section">
+            <h2>Approval</h2>
+            <span id="approvalLabel" class="hint">Local draft</span>
+          </div>
+
+          <div class="metrics roster-controls-section">
+            <div class="metric">
+              <strong id="coveredCount">0</strong>
+              <span>covered days</span>
+            </div>
+            <div class="metric">
+              <strong id="gapCount">0</strong>
+              <span>days with gaps</span>
+            </div>
+            <div class="metric">
+              <strong id="shiftCount">0</strong>
+              <span>assigned shifts</span>
+            </div>
+          </div>
+
+          <div class="day-actions roster-controls-section">
+            <button id="draftButton" type="button">Auto draft</button>
+            <button id="approveButton" class="warning" type="button">Approve roster</button>
+            <button id="copyRosterButton" class="secondary" type="button">Copy full roster</button>
+          </div>
+
+          <div id="rosterGrid" class="roster roster-section"></div>
+
+          <div class="actuals-section">
+            <h3>Planned vs Actual</h3>
+            <p class="hint">Approve actual hours per person/day before they flow into payroll.</p>
+            <div id="actualsGrid" class="actuals"></div>
+          </div>
+
+          <div class="payroll-section">
+            <h3>Hours & Payroll</h3>
+            <div id="payrollGrid" class="payroll"></div>
+          </div>
+
+          <div class="cashflow-section">
+            <div class="history-head">
+              <h3>Cash Flow Tracking</h3>
+              <button id="copyCashflowButton" class="secondary" type="button">Copy cash report</button>
+            </div>
+            <p class="hint">Morning checks, after-shift totals, evening close, terminal photo, and weekly cumulative cash/terminal analytics.</p>
+            <div class="cashflow-grid">
+              <div class="cashflow-form">
+                <label>
+                  Day
+                  <select id="cashflowDateSelect"></select>
+                </label>
+
+                <div class="metrics">
+                  <div class="metric">
+                    <strong id="cashDayCash">0</strong>
+                    <span>cash sales today</span>
+                  </div>
+                  <div class="metric">
+                    <strong id="cashDayTerminal">0</strong>
+                    <span>terminal today</span>
+                  </div>
+                  <div class="metric">
+                    <strong id="cashAfterPayroll">0</strong>
+                    <span>cash after approved pay</span>
+                  </div>
+                </div>
+
+                <div class="cashflow-block">
+                  <h3>Morning Checks</h3>
+                  <label>
+                    Opening cash
+                    <input id="openingCashInput" type="text" inputmode="decimal">
+                  </label>
+                  <label>
+                    Previous terminal total
+                    <input id="previousTerminalInput" type="text" inputmode="decimal">
+                  </label>
+                  <label class="check full">
+                    <input id="terminalCheckedInput" type="checkbox">
+                    Previous day terminal report checked
+                  </label>
+                </div>
+
+                <div class="cashflow-block">
+                  <h3>After My Shift</h3>
+                  <label>
+                    Cash count
+                    <input id="midCashInput" type="text" inputmode="decimal">
+                  </label>
+                  <label>
+                    Terminal total
+                    <input id="midTerminalInput" type="text" inputmode="decimal">
+                  </label>
+                  <label class="full">
+                    Terminal photo
+                    <input id="terminalPhotoInput" type="file" accept="image/*">
+                  </label>
+                  <div id="terminalPhotoPreview" class="photo-preview full">No photo</div>
+                </div>
+
+                <div class="cashflow-block">
+                  <h3>Evening Report</h3>
+                  <label>
+                    Closing cash
+                    <input id="closingCashInput" type="text" inputmode="decimal">
+                  </label>
+                  <label>
+                    Closing terminal
+                    <input id="closingTerminalInput" type="text" inputmode="decimal">
+                  </label>
+                  <label>
+                    Approved staff cash paid
+                    <input id="staffCashPaidInput" type="text" inputmode="decimal">
+                  </label>
+                  <label class="full">
+                    Notes
+                    <textarea id="cashNotesInput" placeholder="Short close report, mismatch notes, terminal issues"></textarea>
+                  </label>
+                </div>
+              </div>
+
+              <div class="cashflow-analytics">
+                <div class="metrics">
+                  <div class="metric">
+                    <strong id="weekCashTotal">0</strong>
+                    <span>latest closing cash</span>
+                  </div>
+                  <div class="metric">
+                    <strong id="weekTerminalTotal">0</strong>
+                    <span>week terminal</span>
+                  </div>
+                  <div class="metric">
+                    <strong id="weekNetCashTotal">0</strong>
+                    <span>week cash sales</span>
+                  </div>
+                </div>
+                <div id="cashflowWeekGrid" class="history-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="messages-section">
+            <h3>Messenger Messages</h3>
+            <div id="messagesGrid" class="messages"></div>
+          </div>
+
+          <div class="history-section">
+            <div class="history-head">
+              <h3>Report Period</h3>
+              <span id="reportPeriodLabel" class="hint"></span>
+            </div>
+            <div class="report-filter">
+              <label>
+                From
+                <input id="reportFromInput" type="date">
+              </label>
+              <label>
+                To
+                <input id="reportToInput" type="date">
+              </label>
+              <button id="reportCurrentWeekButton" class="secondary" type="button">This week</button>
+              <button id="reportAllDataButton" class="secondary" type="button">All data</button>
+            </div>
+          </div>
+
+          <div class="history-section">
+            <div class="history-head">
+              <h3>Period History</h3>
+              <button id="copyHistoryButton" class="secondary" type="button">Copy history</button>
+            </div>
+            <div id="historyGrid" class="history-grid"></div>
+          </div>
+
+          <div class="staff-settings-section">
+            <h3>Staff Settings</h3>
+            <p class="hint">Set Messenger number and hourly rate here. Rate is used by payroll after actual hours are approved.</p>
+            <div id="staffGrid" class="staff-grid"></div>
+          </div>
+
+          <div class="summary-section">
+            <div class="history-head">
+              <h3>Weekly Summary</h3>
+            </div>
+            <div id="summaryGrid" class="history-grid"></div>
+          </div>
+
+          <div class="audit-section">
+            <div class="history-head">
+              <h3>Audit Ledger</h3>
+              <button id="copyAuditButton" class="secondary" type="button">Copy audit</button>
+            </div>
+            <p class="hint">Ledger evidence for shifts, payroll payments, cash movements, and terminal reports in the selected period.</p>
+            <div id="auditGrid" class="history-grid"></div>
+          </div>
+
+          <div id="status" class="status" aria-live="polite"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="./ledger-model.js"></script>
+  <script>
+    const stateKey = "retailShiftCashflowTrackerPublicDemoV2";
+    const dailyBackupKey = `${stateKey}:mandatoryDailyBackups`;
+    const maxMandatoryDailyBackups = 45;
+    const appVersion = "manager v72";
+    const openTime = "07:30";
+    const handoverTime = "17:30";
+    const closeTime = "24:00";
+    const cashflowStartDate = "2026-01-08";
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const defaultLocations = [
+      { id: "main", name: "Store 1" },
+      { id: "second", name: "Store 2" }
+    ];
+    const defaultStaff = [
+      { id: "owner", name: "Owner", phone: "", rate: "20", defaultStart: openTime, defaultEnd: handoverTime, defaultAvailable: true },
+      { id: "supplier", name: "Supplier", phone: "+15550101010", rate: "20" },
+      { id: "staff_b", name: "Staff B", phone: "", rate: "20" },
+      { id: "staff_a", name: "Staff A", phone: "", rate: "20" }
+    ];
+
+    const weekLabelEl = document.getElementById("weekLabel");
+    const appVersionEl = document.getElementById("appVersion");
+    const pageDescriptionEl = document.getElementById("pageDescription");
+    const staffGridEl = document.getElementById("staffGrid");
+    const rosterGridEl = document.getElementById("rosterGrid");
+    const actualsGridEl = document.getElementById("actualsGrid");
+    const payrollGridEl = document.getElementById("payrollGrid");
+    const cashflowDateSelectEl = document.getElementById("cashflowDateSelect");
+    const openingCashInputEl = document.getElementById("openingCashInput");
+    const previousTerminalInputEl = document.getElementById("previousTerminalInput");
+    const terminalCheckedInputEl = document.getElementById("terminalCheckedInput");
+    const midCashInputEl = document.getElementById("midCashInput");
+    const midTerminalInputEl = document.getElementById("midTerminalInput");
+    const terminalPhotoInputEl = document.getElementById("terminalPhotoInput");
+    const terminalPhotoPreviewEl = document.getElementById("terminalPhotoPreview");
+    const closingCashInputEl = document.getElementById("closingCashInput");
+    const closingTerminalInputEl = document.getElementById("closingTerminalInput");
+    const staffCashPaidInputEl = document.getElementById("staffCashPaidInput");
+    const cashNotesInputEl = document.getElementById("cashNotesInput");
+    const todayTitleEl = document.getElementById("todayTitle");
+    const todaySubtitleEl = document.getElementById("todaySubtitle");
+    const todayDateInputEl = document.getElementById("todayDateInput");
+    const todayKnownCashEl = document.getElementById("todayKnownCash");
+    const todayCashSourceEl = document.getElementById("todayCashSource");
+    const todayOpeningCashInputEl = document.getElementById("todayOpeningCashInput");
+    const todayPreviousTerminalInputEl = document.getElementById("todayPreviousTerminalInput");
+    const todayPreviousTerminalHintEl = document.getElementById("todayPreviousTerminalHint");
+    const todayPayoutStaffEl = document.getElementById("todayPayoutStaff");
+    const todayPayoutAmountEl = document.getElementById("todayPayoutAmount");
+    const todayPayoutPaidOnEl = document.getElementById("todayPayoutPaidOn");
+    const todayPayoutWeekEl = document.getElementById("todayPayoutWeek");
+    const todaySavePayoutButtonEl = document.getElementById("todaySavePayoutButton");
+    const todayActualsGridEl = document.getElementById("todayActualsGrid");
+    const todayMidCashInputEl = document.getElementById("todayMidCashInput");
+    const todayMidTerminalInputEl = document.getElementById("todayMidTerminalInput");
+    const todayClosingCashInputEl = document.getElementById("todayClosingCashInput");
+    const todayClosingTerminalInputEl = document.getElementById("todayClosingTerminalInput");
+    const todayFlagsEl = document.getElementById("todayFlags");
+    const cashDayCashEl = document.getElementById("cashDayCash");
+    const cashDayTerminalEl = document.getElementById("cashDayTerminal");
+    const cashAfterPayrollEl = document.getElementById("cashAfterPayroll");
+    const weekCashTotalEl = document.getElementById("weekCashTotal");
+    const weekTerminalTotalEl = document.getElementById("weekTerminalTotal");
+    const weekNetCashTotalEl = document.getElementById("weekNetCashTotal");
+    const cashflowWeekGridEl = document.getElementById("cashflowWeekGrid");
+    const copyCashflowButtonEl = document.getElementById("copyCashflowButton");
+    const messagesGridEl = document.getElementById("messagesGrid");
+    const approvalLabelEl = document.getElementById("approvalLabel");
+    const coveredCountEl = document.getElementById("coveredCount");
+    const gapCountEl = document.getElementById("gapCount");
+    const shiftCountEl = document.getElementById("shiftCount");
+    const statusEl = document.getElementById("status");
+    const locationSelectEl = document.getElementById("locationSelect");
+    const weekSelectEl = document.getElementById("weekSelect");
+    const historyGridEl = document.getElementById("historyGrid");
+    const summaryGridEl = document.getElementById("summaryGrid");
+    const auditGridEl = document.getElementById("auditGrid");
+    const copyHistoryButtonEl = document.getElementById("copyHistoryButton");
+    const copyAuditButtonEl = document.getElementById("copyAuditButton");
+    const reportPeriodLabelEl = document.getElementById("reportPeriodLabel");
+    const reportFromInputEl = document.getElementById("reportFromInput");
+    const reportToInputEl = document.getElementById("reportToInput");
+    const reportCurrentWeekButtonEl = document.getElementById("reportCurrentWeekButton");
+    const reportAllDataButtonEl = document.getElementById("reportAllDataButton");
+    const toastEl = document.getElementById("toast");
+    const draftButtonEl = document.getElementById("draftButton");
+    const approveButtonEl = document.getElementById("approveButton");
+    const copyRosterButtonEl = document.getElementById("copyRosterButton");
+
+    const loadedState = loadState();
+    let state = LedgerModel.migrateStateToLedgerV2(loadedState, appVersion);
+    const ledgerModelMigratedOnLoad = loadedState.schemaVersion !== 2 || !loadedState.guards?.ledgerModel_v2;
+    let activeCashflowDate = "";
+    function routePage() {
+      const route = (location.hash || "#/day").replace(/^#\/?/, "");
+      const aliases = { summary: "dashboard", manager: "day" };
+      const page = aliases[route] || route;
+      return ["day", "roster", "payroll", "cashflow", "dashboard", "audit"].includes(page) ? page : "day";
+    }
+
+    document.body.dataset.page = routePage();
+    const pageTitles = {
+      day: "Manager Day",
+      roster: "Roster & Actual Hours",
+      payroll: "Payroll",
+      cashflow: "Cash Flow",
+      dashboard: "Weekly Summary",
+      audit: "Audit",
+      manager: "Manager Roster"
+    };
+    const pageDescriptions = {
+      day: "Daily cash, terminal, payroll checkpoints, and evening close.",
+      roster: "Weekly roster structure and approved actual hours.",
+      payroll: "Approved hours, payments, and remaining balances by person.",
+      cashflow: "Cash movement, terminal totals, payouts, and weekly running totals.",
+      dashboard: "Weekly money summary plus staff payroll totals for the selected period.",
+      audit: "Traceable ledger records for shifts, payments, cash, terminal, and protected repairs.",
+      manager: "Approve rosters, send shift messages, track actual hours, payroll, and period history."
+    };
+    document.querySelector("h1").textContent = pageTitles[document.body.dataset.page] || "Manager Roster";
+    pageDescriptionEl.textContent = pageDescriptions[document.body.dataset.page] || pageDescriptions.manager;
+    appVersionEl.textContent = appVersion;
+
+    function applyRoute() {
+      document.body.dataset.page = routePage();
+      document.querySelector("h1").textContent = pageTitles[document.body.dataset.page] || "Manager Roster";
+      pageDescriptionEl.textContent = pageDescriptions[document.body.dataset.page] || pageDescriptions.manager;
+      renderAll();
+    }
+
+    function mondayOf(date) {
+      const result = new Date(date);
+      const day = result.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      result.setDate(result.getDate() + diff);
+      result.setHours(0, 0, 0, 0);
+      return result;
+    }
+
+    function baseWeekStart() {
+      return isoDate(mondayOf(new Date()));
+    }
+
+    function addDays(date, amount) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + amount);
+      return result;
+    }
+
+    function isoDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function niceDate(iso) {
+      const date = new Date(`${iso}T00:00:00`);
+      return `${dayNames[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`;
+    }
+
+    function toMinutes(value) {
+      if (value === "24:00") return 1440;
+      const [hours, minutes] = value.split(":").map(Number);
+      return hours * 60 + minutes;
+    }
+
+    function displayTime(value) {
+      return value === "24:00" ? "00:00" : value;
+    }
+
+    function storeEndTime(value) {
+      return value === "00:00" ? "24:00" : value;
+    }
+
+    function shiftHours(start, end) {
+      const startMinutes = toMinutes(start);
+      const endMinutes = toMinutes(end);
+      return Math.max(0, endMinutes - startMinutes) / 60;
+    }
+
+    function money(value) {
+      return `$${Number(value || 0).toFixed(2)}`;
+    }
+
+    function cleanPhoneNumber(value) {
+      return value.replace(/[^\d]/g, "");
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(stateKey)) || {};
+        const base = baseWeekStart();
+        const savedBase = saved.baseWeekStart || base;
+        const migratedActiveWeek = saved.activeWeekStart || (
+          Number.isInteger(saved.weekOffset)
+            ? isoDate(addDays(new Date(`${savedBase}T00:00:00`), saved.weekOffset * 7))
+            : base
+        );
+        const activeWeekStart = savedBase !== base && migratedActiveWeek < base ? base : migratedActiveWeek;
+
+        return {
+          ...saved,
+          baseWeekStart: base,
+          activeWeekStart,
+          activeLocation: saved.activeLocation || "main",
+          locations: mergeLocations(saved.locations),
+          staff: mergeStaff(saved.staff),
+          schedules: migrateSchedules(saved, base)
+        };
+      } catch {
+        return {
+          baseWeekStart: baseWeekStart(),
+          activeWeekStart: baseWeekStart(),
+          activeLocation: "main",
+          locations: mergeLocations(),
+          staff: mergeStaff(),
+          schedules: {}
+        };
+      }
+    }
+
+    function mergeLocations(savedLocations = []) {
+      return defaultLocations.map((location) => {
+        const saved = savedLocations.find((item) => item.id === location.id) || {};
+        return { ...location, ...saved };
+      });
+    }
+
+    function migrateSchedules(saved, base) {
+      const schedules = saved.schedules || {};
+
+      if (!saved.schedules && (saved.availability || saved.roster)) {
+        const weekStart = saved.weekStart || base;
+        schedules[`main__${weekStart}`] = {
+          availability: saved.availability || {},
+          roster: saved.roster || {},
+          payroll: {},
+          cashflow: {},
+          approved: Boolean(saved.approved),
+          approvedAt: saved.approvedAt || ""
+        };
+      }
+
+      return schedules;
+    }
+
+    function mergeStaff(savedStaff = []) {
+      return defaultStaff.map((person) => {
+        const saved = savedStaff.find((item) => item.id === person.id) || {};
+        return { ...person, ...saved, rate: saved.rate || person.rate };
+      });
+    }
+
+    function saveState() {
+      localStorage.setItem(stateKey, JSON.stringify(state));
+      createMandatoryDailyBackup("state saved");
+    }
+
+    function readMandatoryDailyBackups() {
+      try {
+        const backups = JSON.parse(localStorage.getItem(dailyBackupKey)) || [];
+        return Array.isArray(backups) ? backups : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function writeMandatoryDailyBackups(backups) {
+      localStorage.setItem(dailyBackupKey, JSON.stringify(backups.slice(0, maxMandatoryDailyBackups)));
+    }
+
+    function createMandatoryDailyBackup(reason = "automatic daily backup") {
+      try {
+        const now = new Date();
+        const backupDate = isoDate(now);
+        const backups = readMandatoryDailyBackups().filter((backup) => backup.backupDate !== backupDate);
+        const storage = {};
+        for (let index = 0; index < localStorage.length; index += 1) {
+          const key = localStorage.key(index);
+          if (!key || key === dailyBackupKey) continue;
+          if (key === stateKey || key.startsWith(`${stateKey}:`) || key.includes("Schedule")) {
+            storage[key] = localStorage.getItem(key);
+          }
+        }
+
+        backups.unshift({
+          backupDate,
+          createdAt: now.toISOString(),
+          localTime: now.toLocaleString([], { dateStyle: "short", timeStyle: "short" }),
+          appVersion,
+          reason,
+          state: JSON.parse(JSON.stringify(state)),
+          storage
+        });
+        writeMandatoryDailyBackups(backups);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function protectExistingDataFromLegacyMigrations() {
+      if (state.legacyMigrationProtection20260116v1) return false;
+
+      const hasJournalWeeks = Boolean(
+        state.schedules?.["main__2026-01-05"] ||
+        state.schedules?.["main__2026-01-12"] ||
+        Object.keys(state.schedules || {}).some((key) => key.endsWith("__2026-01-05") || key.endsWith("__2026-01-12"))
+      );
+      if (!hasJournalWeeks) return false;
+
+      state.payrollCashRepair20260108 = true;
+      state.monWedActualRecovery20260108 = true;
+      state.canonicalWeekData20260108 = true;
+      state.canonicalWeekData20260108v2 = true;
+      state.canonicalWeekData20260108v3 = true;
+      state.journalData20260115v1 = true;
+      state.rosterCorrection20260115v2 = true;
+      state.financeLedger20260115v1 = true;
+      state.payrollActualsCorrection20260115v1 = true;
+      state.staff_aPayrollCorrection20260115v1 = true;
+      state.ownerPayrollCorrection20260115v1 = true;
+      state.confirmedFinanceImport20260116v1 = true;
+      state.legacyMigrationProtection20260116v1 = true;
+      saveState();
+      return true;
+    }
+
+    function scheduleBackupKey() {
+      return scheduleKey();
+    }
+
+    function snapshotSchedule(reason) {
+      const key = scheduleBackupKey();
+      const schedule = state.schedules?.[key];
+      if (!schedule) return;
+      if (!state.scheduleBackups) state.scheduleBackups = {};
+      if (!state.scheduleBackups[key]) state.scheduleBackups[key] = [];
+      state.scheduleBackups[key].unshift({
+        reason,
+        at: new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" }),
+        schedule: JSON.parse(JSON.stringify(schedule))
+      });
+      state.scheduleBackups[key] = state.scheduleBackups[key].slice(0, 8);
+    }
+
+    function normalizePayroll(payroll = {}) {
+      const hasApprovedPayments = payroll.approvedCashPaid !== undefined || payroll.approvedTransferPaid !== undefined;
+      const shouldMigrateApprovedPayment = payroll.paymentApproved && !hasApprovedPayments && !payroll.draftUpdatedAt;
+      const migratedCash = shouldMigrateApprovedPayment ? payroll.cashPaid : payroll.approvedCashPaid;
+      const migratedTransfer = shouldMigrateApprovedPayment ? payroll.transferPaid : payroll.approvedTransferPaid;
+      let payments = Array.isArray(payroll.payments) ? payroll.payments : [];
+
+      if (payments.length === 0 && (Number.parseFloat(migratedCash || "0") || Number.parseFloat(migratedTransfer || "0"))) {
+        payments = [{
+          id: `migrated-${payroll.paymentApprovedAt || "payment"}`,
+          date: isoDate(new Date()),
+          cash: migratedCash || "",
+          transfer: migratedTransfer || "",
+          approvedAt: payroll.paymentApprovedAt || "Migrated payment"
+        }];
+      }
+
+      return {
+        cashPaid: shouldMigrateApprovedPayment ? "" : payroll.cashPaid || "",
+        transferPaid: shouldMigrateApprovedPayment ? "" : payroll.transferPaid || "",
+        approvedCashPaid: migratedCash || "",
+        approvedTransferPaid: migratedTransfer || "",
+        paymentDate: payroll.paymentDate || "",
+        draftPaymentDate: payroll.draftPaymentDate || "",
+        payments,
+        paymentApproved: Boolean(payroll.paymentApproved || Number.parseFloat(migratedCash || "0") || Number.parseFloat(migratedTransfer || "0")),
+        paymentApprovedAt: payroll.paymentApprovedAt || "",
+        draftUpdatedAt: payroll.draftUpdatedAt || ""
+      };
+    }
+
+    function nextWeekStart() {
+      return isoDate(addDays(new Date(`${state.baseWeekStart}T00:00:00`), 7));
+    }
+
+    function previousWeekStart() {
+      return isoDate(addDays(new Date(`${state.baseWeekStart}T00:00:00`), -7));
+    }
+
+    function selectedWeekStart() {
+      return state.activeWeekStart || state.baseWeekStart;
+    }
+
+    function scheduleKey() {
+      return `${state.activeLocation}__${selectedWeekStart()}`;
+    }
+
+    function scheduleForWeek(weekStart, locationId = state.activeLocation) {
+      const key = `${locationId}__${weekStart}`;
+      if (!state.schedules[key]) {
+        state.schedules[key] = {
+          availability: {},
+          roster: {},
+          payroll: {},
+          cashflow: {},
+          approved: false,
+          approvedAt: ""
+        };
+      }
+      if (!state.schedules[key].availability) state.schedules[key].availability = {};
+      if (!state.schedules[key].roster) state.schedules[key].roster = {};
+      if (!state.schedules[key].payroll) state.schedules[key].payroll = {};
+      if (!state.schedules[key].cashflow) state.schedules[key].cashflow = {};
+      state.staff.forEach((person) => {
+        state.schedules[key].payroll[person.id] = normalizePayroll(state.schedules[key].payroll[person.id]);
+      });
+      if (!state.schedules[key].approvedDays) state.schedules[key].approvedDays = {};
+      return state.schedules[key];
+    }
+
+    function currentSchedule() {
+      return scheduleForWeek(selectedWeekStart());
+    }
+
+    function scheduleForDate(date, locationId = state.activeLocation) {
+      return scheduleForWeek(isoDate(mondayOf(new Date(`${date}T00:00:00`))), locationId);
+    }
+
+    function currentLocation() {
+      return state.locations.find((location) => location.id === state.activeLocation) || state.locations[0];
+    }
+
+    function scheduleKeyParts(key) {
+      const marker = "__";
+      const index = key.lastIndexOf(marker);
+      if (index < 0) return null;
+      return {
+        locationId: key.slice(0, index),
+        weekStart: key.slice(index + marker.length)
+      };
+    }
+
+    function weekDates() {
+      const start = new Date(`${selectedWeekStart()}T00:00:00`);
+      return Array.from({ length: 7 }, (_, index) => isoDate(addDays(start, index)));
+    }
+
+    function datesBetween(from, to) {
+      const start = from <= to ? from : to;
+      const end = from <= to ? to : from;
+      const dates = [];
+      let cursor = new Date(`${start}T00:00:00`);
+      const last = new Date(`${end}T00:00:00`);
+      while (cursor <= last) {
+        dates.push(isoDate(cursor));
+        cursor = addDays(cursor, 1);
+      }
+      return dates;
+    }
+
+    function savedScheduleDates() {
+      const dates = [];
+      Object.entries(state.schedules || {}).forEach(([key, schedule]) => {
+        if (!scheduleKeyParts(key)) return;
+        Object.keys(schedule.roster || {}).forEach((date) => dates.push(date));
+        Object.keys(schedule.cashflow || {}).forEach((date) => dates.push(date));
+      });
+      (ledger().shifts || []).forEach((shift) => dates.push(shift.date));
+      (ledger().payments || []).forEach((payment) => {
+        dates.push(payment.paidOn);
+        (payment.allocation || []).forEach((allocation) => dates.push(allocation.forWeekStart));
+      });
+      (ledger().cashMovements || []).forEach((movement) => dates.push(movement.date));
+      (ledger().terminalReports || []).forEach((report) => {
+        dates.push(report.forDate);
+        dates.push(report.reportedOn);
+      });
+      return [...new Set(dates.filter(Boolean))].sort();
+    }
+
+    function reportRange() {
+      const fallbackDates = weekDates();
+      const from = reportFromInputEl?.value || state.reportFrom || fallbackDates[0];
+      const to = reportToInputEl?.value || state.reportTo || fallbackDates[6];
+      return from <= to ? { from, to } : { from: to, to: from };
+    }
+
+    function getAvailability(staffId, date) {
+      const person = state.staff.find((item) => item.id === staffId);
+      const schedule = currentSchedule();
+      const saved = schedule.availability?.[staffId]?.[date];
+      const fallback = {
+        available: Boolean(person?.defaultAvailable),
+        start: person?.defaultStart || handoverTime,
+        end: person?.defaultEnd || closeTime
+      };
+
+      if (!saved) return fallback;
+
+      if (Array.isArray(saved.slots)) {
+        const first = saved.slots[0] || fallback;
+        return {
+          available: Boolean(first.available),
+          start: first.start || fallback.start,
+          end: first.end || fallback.end,
+          slots: saved.slots
+        };
+      }
+
+      return saved;
+    }
+
+    function availabilitySlots(staffId, date) {
+      const availability = getAvailability(staffId, date);
+      const slots = availability.slots || [availability];
+      return slots
+        .filter((slot) => slot && slot.available)
+        .map((slot) => ({
+          start: slot.start,
+          end: slot.end,
+          available: true
+        }))
+        .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+    }
+
+    function setAvailability(staffId, date, value) {
+      const schedule = currentSchedule();
+      snapshotSchedule(`availability changed ${niceDate(date)}`);
+      if (!schedule.availability[staffId]) schedule.availability[staffId] = {};
+      schedule.availability[staffId][date] = value;
+      schedule.roster = {};
+      schedule.rosterSignature = "";
+      schedule.approvedDays = {};
+      schedule.approved = false;
+      schedule.approvedAt = "";
+      saveState();
+    }
+
+    function isAvailable(staffId, date, start, end) {
+      return availabilitySlots(staffId, date).some((slot) =>
+        toMinutes(start) >= toMinutes(slot.start) &&
+        toMinutes(end) <= toMinutes(slot.end)
+      );
+    }
+
+    function renderLocationSelect() {
+      locationSelectEl.innerHTML = "";
+      state.locations.forEach((location) => {
+        const option = document.createElement("option");
+        option.value = location.id;
+        option.textContent = location.name;
+        locationSelectEl.append(option);
+      });
+      locationSelectEl.value = state.activeLocation;
+    }
+
+    function renderWeekSelect() {
+      const weekStarts = new Set([state.baseWeekStart, nextWeekStart(), selectedWeekStart()]);
+      Object.keys(state.schedules || {}).forEach((key) => {
+        const parts = scheduleKeyParts(key);
+        if (parts?.locationId === state.activeLocation) weekStarts.add(parts.weekStart);
+      });
+
+      weekSelectEl.innerHTML = "";
+      Array.from(weekStarts)
+        .sort()
+        .forEach((weekStart) => {
+          const option = document.createElement("option");
+          option.value = weekStart;
+          const dates = weekRangeDates(weekStart);
+          const label = weekStart === state.baseWeekStart
+            ? "Current week"
+            : weekStart === nextWeekStart()
+              ? "Next week"
+              : "Saved week";
+          option.textContent = `${label}: ${niceDate(dates[0])} - ${niceDate(dates[6])}`;
+          weekSelectEl.append(option);
+        });
+      weekSelectEl.value = selectedWeekStart();
+    }
+
+    function renderWeekLabel() {
+      const dates = weekDates();
+      weekLabelEl.textContent = `${currentLocation().name}: ${niceDate(dates[0])} - ${niceDate(dates[6])}`;
+    }
+
+    function weekRangeDates(weekStart) {
+      const start = new Date(`${weekStart}T00:00:00`);
+      return Array.from({ length: 7 }, (_, index) => isoDate(addDays(start, index)));
+    }
+
+    function rosterStructureSignature(schedule, weekStart) {
+      return weekRangeDates(weekStart)
+        .map((date) => (schedule.roster?.[date] || [])
+          .map((entry) => `${entry.staffId || ""}:${entry.start}-${entry.end}`)
+          .join(";"))
+        .join("|");
+    }
+
+    function cloneRosterWeekStructure(sourceSchedule, sourceWeekStart, targetSchedule, targetWeekStart) {
+      const sourceDates = weekRangeDates(sourceWeekStart);
+      const targetDates = weekRangeDates(targetWeekStart);
+      const sourceHasStructure = sourceDates.some((date) => (sourceSchedule.roster?.[date] || []).length > 0);
+      if (!sourceHasStructure) return false;
+
+      const sourceSignature = rosterStructureSignature(sourceSchedule, sourceWeekStart);
+      const targetSignature = rosterStructureSignature(targetSchedule, targetWeekStart);
+      if (sourceSignature === targetSignature) return false;
+
+      targetSchedule.roster = { ...(targetSchedule.roster || {}) };
+      targetSchedule.approvedDays = {};
+      targetSchedule.approved = false;
+      targetSchedule.approvedAt = "";
+
+      sourceDates.forEach((sourceDate, index) => {
+        const targetDate = targetDates[index];
+        const existingEntries = targetSchedule.roster?.[targetDate] || [];
+        targetSchedule.roster[targetDate] = (sourceSchedule.roster?.[sourceDate] || []).map((sourceEntry, entryIndex) => {
+          const existing = existingEntries[entryIndex];
+          const canKeepActuals = existing &&
+            existing.staffId === sourceEntry.staffId &&
+            existing.start === sourceEntry.start &&
+            existing.end === sourceEntry.end;
+
+          return {
+            staffId: sourceEntry.staffId || "",
+            start: sourceEntry.start,
+            end: sourceEntry.end,
+            ...(canKeepActuals && existing.actualApproved ? {
+              actualStart: existing.actualStart,
+              actualEnd: existing.actualEnd,
+              actualApproved: existing.actualApproved,
+              actualApprovedAt: existing.actualApprovedAt
+            } : {})
+          };
+        });
+      });
+
+      targetSchedule.rosterSignature = sourceSignature;
+      targetSchedule.rosterNeedsRefresh = false;
+      targetSchedule.rosterNeedsRefreshSignature = "";
+      return true;
+    }
+
+    function syncCurrentAndNextRosterStructureFromPrevious() {
+      const sourceWeek = previousWeekStart();
+      const sourceSchedule = scheduleForWeek(sourceWeek);
+      const sourceSignature = rosterStructureSignature(sourceSchedule, sourceWeek);
+      const syncStamp = `${state.activeLocation}:${sourceWeek}:${state.baseWeekStart}:${nextWeekStart()}:${sourceSignature}:v1`;
+      if (state.rosterStructureSyncStamp === syncStamp) return false;
+
+      let changed = false;
+
+      [state.baseWeekStart, nextWeekStart()].forEach((targetWeek) => {
+        const targetSchedule = scheduleForWeek(targetWeek);
+        if (cloneRosterWeekStructure(sourceSchedule, sourceWeek, targetSchedule, targetWeek)) {
+          changed = true;
+        }
+      });
+
+      state.rosterStructureSyncStamp = syncStamp;
+      saveState();
+      return changed;
+    }
+
+    function normalizeDecimalText(value) {
+      return String(value ?? "").replace(",", ".").replace(/[^\d.-]/g, "");
+    }
+
+    function numberValue(value) {
+      return Number.parseFloat(normalizeDecimalText(value) || "0") || 0;
+    }
+
+    function normalizeCashflowDay(day = {}) {
+      return {
+        openingCash: day.openingCash || "",
+        previousTerminal: day.previousTerminal || "",
+        terminalChecked: Boolean(day.terminalChecked),
+        midCash: day.midCash || "",
+        midTerminal: day.midTerminal || "",
+        terminalPhoto: day.terminalPhoto || "",
+        terminalPhotoName: day.terminalPhotoName || "",
+        closingCash: day.closingCash || "",
+        closingTerminal: day.closingTerminal || "",
+        staffCashPaid: day.staffCashPaid || "",
+        cashAdjustment: day.cashAdjustment || "",
+        notes: day.notes || "",
+        updatedAt: day.updatedAt || ""
+      };
+    }
+
+    function selectedCashflowDate() {
+      const dates = weekDates();
+      if (!activeCashflowDate || !dates.includes(activeCashflowDate)) {
+        const today = isoDate(new Date());
+        activeCashflowDate = dates.includes(today) ? today : dates[0];
+      }
+      return activeCashflowDate;
+    }
+
+    function cashflowDay(date = selectedCashflowDate()) {
+      const schedule = currentSchedule();
+      schedule.cashflow[date] = normalizeCashflowDay(schedule.cashflow[date]);
+      return schedule.cashflow[date];
+    }
+
+    function cashflowDayForSchedule(schedule, date) {
+      if (!schedule.cashflow) schedule.cashflow = {};
+      schedule.cashflow[date] = normalizeCashflowDay(schedule.cashflow[date]);
+      return schedule.cashflow[date];
+    }
+
+    function ledger() {
+      state.ledger = state.ledger || { shifts: [], payments: [], cashMovements: [], terminalReports: [] };
+      state.ledger.shifts = state.ledger.shifts || [];
+      state.ledger.payments = state.ledger.payments || [];
+      state.ledger.cashMovements = state.ledger.cashMovements || [];
+      state.ledger.terminalReports = state.ledger.terminalReports || [];
+      return state.ledger;
+    }
+
+    function upsertCashMovement(record) {
+      const records = ledger().cashMovements;
+      const index = records.findIndex((item) => item.id === record.id);
+      if (index >= 0) records[index] = { ...records[index], ...record };
+      else records.push(record);
+    }
+
+    function upsertTerminalReport(record) {
+      const records = ledger().terminalReports;
+      const index = records.findIndex((item) => item.id === record.id);
+      if (index >= 0) records[index] = { ...records[index], ...record };
+      else records.push(record);
+    }
+
+    function upsertLedgerPayment(record) {
+      const records = ledger().payments;
+      const index = records.findIndex((item) => item.id === record.id);
+      if (index >= 0) records[index] = { ...records[index], ...record };
+      else records.push(record);
+    }
+
+    function upsertLedgerShift(record) {
+      const records = ledger().shifts;
+      const index = records.findIndex((item) => item.id === record.id);
+      if (index >= 0) records[index] = { ...records[index], ...record };
+      else records.push(record);
+    }
+
+    function syncActualShiftToLedger(entry, date, sourceRef) {
+      if (!entry.staffId || !entry.actualApproved) return;
+      const actualStart = entry.actualStart || entry.start;
+      const actualEnd = entry.actualEnd || entry.end;
+      upsertLedgerShift({
+        id: `shift_${date}_${entry.staffId}_${entry.start}_${entry.end}`.replace(/[^a-zA-Z0-9_:-]/g, "_"),
+        staffId: entry.staffId,
+        date,
+        plannedStart: entry.start,
+        plannedEnd: entry.end,
+        actualStart,
+        actualEnd,
+        hours: shiftHours(actualStart, actualEnd),
+        status: "approved",
+        approvedAt: entry.actualApprovedAt || new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" }),
+        approvedBy: "user",
+        sourceRef
+      });
+    }
+
+    function ledgerCashMovement(date, type) {
+      return (ledger().cashMovements || []).find((record) => record.date === date && record.type === type);
+    }
+
+    function ledgerTerminalAmount(date, kind = "") {
+      const records = (ledger().terminalReports || []).filter((record) => record.forDate === date);
+      const match = kind ? records.find((record) => record.kind === kind) : records.find((record) => record.kind === "closing") || records.find((record) => record.kind === "after_shift");
+      return match ? numberValue(match.amount) : 0;
+    }
+
+    function ledgerPreviousTerminal(date) {
+      const previousDate = isoDate(addDays(new Date(`${date}T00:00:00`), -1));
+      const record = (ledger().terminalReports || []).find((item) => item.forDate === previousDate && item.reportedOn === date && item.kind === "closing");
+      return record ? numberValue(record.amount) : 0;
+    }
+
+    function cashflowDayView(date, schedule = scheduleForDate(date)) {
+      const legacy = cashflowDayForSchedule(schedule, date);
+      const opening = ledgerCashMovement(date, "opening_count");
+      const checkpoint = ledgerCashMovement(date, "checkpoint_count");
+      const closing = ledgerCashMovement(date, "closing_count");
+      const previousTerminal = ledgerPreviousTerminal(date);
+      const afterShiftTerminal = ledgerTerminalAmount(date, "after_shift");
+      const closingTerminal = ledgerTerminalAmount(date, "closing");
+      return {
+        ...legacy,
+        openingCash: opening ? String(opening.amount) : legacy.openingCash,
+        midCash: checkpoint ? String(checkpoint.amount) : legacy.midCash,
+        closingCash: closing ? String(closing.amount) : legacy.closingCash,
+        previousTerminal: previousTerminal ? String(previousTerminal) : legacy.previousTerminal,
+        midTerminal: afterShiftTerminal ? String(afterShiftTerminal) : legacy.midTerminal,
+        closingTerminal: closingTerminal ? String(closingTerminal) : legacy.closingTerminal
+      };
+    }
+
+    function ledgerPaymentTotalsForStaffWeek(staffId, weekStart) {
+      const payments = ledger().payments
+        .filter((payment) => payment.staffId === staffId)
+        .map((payment) => {
+          const allocated = (payment.allocation || [])
+            .filter((allocation) => allocation.forWeekStart === weekStart)
+            .reduce((total, allocation) => total + numberValue(allocation.amount), 0);
+          return { payment, allocated };
+        })
+        .filter((item) => item.allocated > 0);
+
+      return payments.reduce((totals, { payment, allocated }) => {
+        if (payment.method === "transfer") totals.transfer += allocated;
+        else totals.cash += allocated;
+        totals.paid += allocated;
+        totals.payments.push({ ...payment, allocated });
+        return totals;
+      }, { cash: 0, transfer: 0, paid: 0, payments: [] });
+    }
+
+    function ledgerCashPaidForDate(date) {
+      return ledger().payments
+        .filter((payment) => payment.paidOn === date && payment.method !== "transfer")
+        .reduce((total, payment) => total + numberValue(payment.amount), 0);
+    }
+
+    function paymentSummaryFromLedger(payments) {
+      return payments.length
+        ? payments.map((payment) => `${payment.paidOn || "no date"} ${money(payment.allocated ?? payment.amount)} ${payment.method || "cash"}`).join("; ")
+        : "";
+    }
+
+    function selectedTodayDate() {
+      const fallback = selectedCashflowDate();
+      return todayDateInputEl?.value || fallback;
+    }
+
+    function todayLatestCash(date) {
+      const latest = LedgerModel.latestKnownCount(ledger(), date);
+      if (latest.amount !== null) return latest;
+      const day = cashflowDayView(date);
+      if (hasNumberInput(day.closingCash)) return { amount: numberValue(day.closingCash), source: "closing_count" };
+      if (hasNumberInput(day.midCash)) return { amount: numberValue(day.midCash), source: "checkpoint_count" };
+      if (hasNumberInput(day.openingCash)) return { amount: numberValue(day.openingCash), source: "opening_count" };
+      return { amount: 0, source: "pending" };
+    }
+
+    function payrollCashPaidForDate(date) {
+      if (date < cashflowStartDate) return 0;
+      return ledgerCashPaidForDate(date);
+    }
+
+    function terminalAmountForDay(day, schedule = currentSchedule(), date = selectedCashflowDate()) {
+      const ledgerTerminal = LedgerModel.terminalForDate(ledger(), date);
+      if (ledgerTerminal > 0) return ledgerTerminal;
+      const nextDate = isoDate(addDays(new Date(`${date}T00:00:00`), 1));
+      const nextDay = cashflowDayView(nextDate, scheduleForDate(nextDate));
+      return numberValue(nextDay.previousTerminal) || numberValue(day.closingTerminal) || numberValue(day.midTerminal);
+    }
+
+    function hasNumberInput(value) {
+      return value !== undefined && value !== null && String(value).trim() !== "";
+    }
+
+    function syncLedgerCashflowField(date, field, value, sourceRef) {
+      const typeByField = {
+        openingCash: "opening_count",
+        midCash: "checkpoint_count",
+        closingCash: "closing_count"
+      };
+      if (typeByField[field] && hasNumberInput(value)) {
+        upsertCashMovement({
+          id: `cm_${date}_${typeByField[field]}`,
+          date,
+          type: typeByField[field],
+          amount: numberValue(value),
+          direction: "snapshot",
+          note: "",
+          sourceRef
+        });
+      }
+      if (field === "previousTerminal" && hasNumberInput(value)) {
+        const previousDate = isoDate(addDays(new Date(`${date}T00:00:00`), -1));
+        upsertTerminalReport({
+          id: `term_${date}_for_${previousDate}`,
+          forDate: previousDate,
+          reportedOn: date,
+          kind: "closing",
+          amount: numberValue(value),
+          evidence: "",
+          sourceRef
+        });
+      }
+      if (field === "midTerminal" && hasNumberInput(value)) {
+        upsertTerminalReport({
+          id: `term_${date}_after_shift`,
+          forDate: date,
+          reportedOn: date,
+          kind: "after_shift",
+          amount: numberValue(value),
+          evidence: "",
+          sourceRef
+        });
+      }
+      if (field === "closingTerminal" && hasNumberInput(value)) {
+        upsertTerminalReport({
+          id: `term_${date}_closing`,
+          forDate: date,
+          reportedOn: date,
+          kind: "closing",
+          amount: numberValue(value),
+          evidence: "",
+          sourceRef
+        });
+      }
+    }
+
+    function cashflowTotalsForDay(day, date = selectedCashflowDate(), schedule = currentSchedule()) {
+      if (date < cashflowStartDate) {
+        return {
+          cashSales: 0,
+          terminal: 0,
+          staffCashPaid: 0,
+          manualStaffCashPaid: 0,
+          payrollCashPaid: 0,
+          netCash: 0,
+          gross: 0
+        };
+      }
+      const opening = numberValue(day.openingCash);
+      const closing = numberValue(day.closingCash);
+      const terminal = terminalAmountForDay(day, schedule, date);
+      const payrollCashPaid = payrollCashPaidForDate(date, schedule);
+      const staffCashPaid = numberValue(day.staffCashPaid) + payrollCashPaid;
+      const cashAdjustment = numberValue(day.cashAdjustment);
+      const calculatedCashSales = Math.max(0, closing - opening + staffCashPaid - cashAdjustment);
+      const cashSales = hasNumberInput(day.closingCash)
+        ? calculatedCashSales
+        : numberValue(day.midCash) || calculatedCashSales;
+
+      return {
+        cashSales,
+        terminal,
+        staffCashPaid,
+        manualStaffCashPaid: numberValue(day.staffCashPaid),
+        payrollCashPaid,
+        cashAdjustment,
+        netCash: cashSales - staffCashPaid,
+        gross: cashSales + terminal
+      };
+    }
+
+    function renderCashflowDateSelect() {
+      const selected = selectedCashflowDate();
+      cashflowDateSelectEl.innerHTML = "";
+      weekDates().forEach((date) => {
+        const option = document.createElement("option");
+        option.value = date;
+        option.textContent = niceDate(date);
+        cashflowDateSelectEl.append(option);
+      });
+      cashflowDateSelectEl.value = selected;
+    }
+
+    function syncCashflowInputs() {
+      const day = cashflowDay();
+      openingCashInputEl.value = day.openingCash;
+      previousTerminalInputEl.value = day.previousTerminal;
+      terminalCheckedInputEl.checked = day.terminalChecked;
+      midCashInputEl.value = day.midCash;
+      midTerminalInputEl.value = day.midTerminal;
+      closingCashInputEl.value = day.closingCash;
+      closingTerminalInputEl.value = day.closingTerminal;
+      staffCashPaidInputEl.value = day.staffCashPaid;
+      cashNotesInputEl.value = day.notes;
+      terminalPhotoInputEl.value = "";
+
+      if (day.terminalPhoto) {
+        terminalPhotoPreviewEl.innerHTML = "";
+        const image = document.createElement("img");
+        image.alt = day.terminalPhotoName || "Terminal report photo";
+        image.src = day.terminalPhoto;
+        terminalPhotoPreviewEl.append(image);
+      } else {
+        terminalPhotoPreviewEl.textContent = "No photo";
+      }
+    }
+
+    function saveCashflowField(field, value) {
+      const day = cashflowDay();
+      const date = selectedCashflowDate();
+      day[field] = value;
+      day.updatedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+      syncLedgerCashflowField(date, field, value, "cashflow-screen");
+      saveState();
+      renderCashflowAnalytics();
+      renderSummary();
+      renderAudit();
+    }
+
+    function renderCashflowAnalytics() {
+      const schedule = currentSchedule();
+      const selectedDate = selectedCashflowDate();
+      const selectedDay = cashflowDayView(selectedDate, schedule);
+      const selectedTotals = cashflowTotalsForDay(selectedDay, selectedDate, schedule);
+      cashDayCashEl.textContent = money(selectedTotals.cashSales);
+      cashDayTerminalEl.textContent = money(selectedTotals.terminal);
+      cashAfterPayrollEl.textContent = money(selectedTotals.netCash);
+
+      cashflowWeekGridEl.innerHTML = "";
+      let weekCash = 0;
+      let weekTerminal = 0;
+      let latestClosingCash = 0;
+
+      weekDates().forEach((date) => {
+        const day = cashflowDayView(date, scheduleForDate(date));
+        const totals = cashflowTotalsForDay(day, date, schedule);
+        weekCash += totals.cashSales;
+        weekTerminal += totals.terminal;
+        if (numberValue(day.closingCash)) latestClosingCash = numberValue(day.closingCash);
+
+        const row = document.createElement("div");
+        row.className = "cashflow-row";
+
+        const dayValue = document.createElement("div");
+        dayValue.className = "payroll-value";
+        dayValue.innerHTML = `${niceDate(date)}<span>${day.terminalChecked ? "terminal checked" : "terminal not checked"}</span>`;
+
+        const opening = document.createElement("div");
+        opening.className = "payroll-value";
+        opening.innerHTML = `${money(day.openingCash)}<span>opening</span>`;
+
+        const midCash = document.createElement("div");
+        midCash.className = "payroll-value earned";
+        midCash.innerHTML = `${money(day.midCash)}<span>after shift</span>`;
+
+        const closing = document.createElement("div");
+        closing.className = "payroll-value earned";
+        closing.innerHTML = `${money(day.closingCash)}<span>closing cash</span>`;
+
+        const terminal = document.createElement("div");
+        terminal.className = "payroll-value";
+        terminal.innerHTML = `${money(totals.terminal)}<span>terminal</span>`;
+
+        const staffPaid = document.createElement("div");
+        staffPaid.className = "payroll-value";
+        staffPaid.innerHTML = `${money(totals.staffCashPaid)}<span>${money(totals.payrollCashPaid)} payroll</span>`;
+
+        const gross = document.createElement("div");
+        gross.className = "payroll-value";
+        gross.innerHTML = `${money(totals.gross)}<span>daily total</span>`;
+
+        row.append(dayValue, opening, midCash, closing, terminal, staffPaid, gross);
+        cashflowWeekGridEl.append(row);
+      });
+
+      weekCashTotalEl.textContent = money(latestClosingCash);
+      weekTerminalTotalEl.textContent = money(weekTerminal);
+      weekNetCashTotalEl.textContent = money(weekCash);
+    }
+
+    function renderCashflow() {
+      renderCashflowDateSelect();
+      syncCashflowInputs();
+      renderCashflowAnalytics();
+    }
+
+    function renderTodayScreen() {
+      if (!todayDateInputEl) return;
+      const date = selectedTodayDate();
+      const previousDate = isoDate(addDays(new Date(`${date}T00:00:00`), -1));
+      const schedule = scheduleForDate(date);
+      const weekStart = isoDate(mondayOf(new Date(`${date}T00:00:00`)));
+      const day = cashflowDayView(date, schedule);
+      todayDateInputEl.value = date;
+      todayPayoutPaidOnEl.value = todayPayoutPaidOnEl.value || date;
+      todayTitleEl.textContent = `${niceDate(date)} Daily Control`;
+      todaySubtitleEl.textContent = `Payroll week ${niceDate(weekStart)}`;
+      const latest = todayLatestCash(date);
+      todayKnownCashEl.textContent = money(latest.amount);
+      todayCashSourceEl.textContent = latest.source === "pending" ? "no cash checkpoint yet" : `from ${latest.source.replace("_", " ")}`;
+      todayOpeningCashInputEl.value = day.openingCash;
+      todayPreviousTerminalInputEl.value = day.previousTerminal;
+      todayMidCashInputEl.value = day.midCash;
+      todayMidTerminalInputEl.value = day.midTerminal;
+      todayClosingCashInputEl.value = day.closingCash;
+      todayClosingTerminalInputEl.value = day.closingTerminal;
+      todayPreviousTerminalHintEl.textContent = `This writes terminal report for ${niceDate(previousDate)}.`;
+
+      todayActualsGridEl.innerHTML = "";
+      const dayEntries = (schedule.roster?.[date] || []).filter((entry) => entry.staffId);
+      if (dayEntries.length) {
+        dayEntries.forEach((entry) => {
+          const row = actualRowFor(entry, date);
+          if (row) todayActualsGridEl.append(row);
+        });
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "hint";
+        empty.textContent = "No assigned shifts for this day.";
+        todayActualsGridEl.append(empty);
+      }
+
+      todayPayoutStaffEl.innerHTML = "";
+      state.staff.forEach((person) => {
+        const option = document.createElement("option");
+        option.value = person.id;
+        option.textContent = person.name;
+        todayPayoutStaffEl.append(option);
+      });
+      todayPayoutWeekEl.innerHTML = "";
+      [weekStart, isoDate(addDays(mondayOf(new Date(`${date}T00:00:00`)), -7))].forEach((weekStart) => {
+        const option = document.createElement("option");
+        option.value = weekStart;
+        option.textContent = `${niceDate(weekStart)} payroll week`;
+        todayPayoutWeekEl.append(option);
+      });
+
+      const flags = [];
+      const completeness = LedgerModel.dayCompleteness(ledger(), date);
+      if (completeness.incomplete) flags.push("Day has missing opening, closing, terminal, or pending shift checkpoints.");
+      LedgerModel.payrollSummary(ledger(), LedgerModel.staffRates, weekStart)
+        .filter((row) => row.toPay > 0)
+        .forEach((row) => flags.push(`${state.staff.find((person) => person.id === row.staffId)?.name || row.staffId}: ${money(row.toPay)} unpaid for this payroll week.`));
+      todayFlagsEl.innerHTML = flags.length
+        ? flags.map((flag) => `<div class="today-flag">${flag}</div>`).join("")
+        : `<div class="hint">No attention flags for this date.</div>`;
+    }
+
+    function cashflowReportText() {
+      const date = selectedCashflowDate();
+      const day = cashflowDayView(date, scheduleForDate(date));
+      const totals = cashflowTotalsForDay(day, date);
+      const lines = [
+        `Cash flow report - ${currentLocation().name}`,
+        `${niceDate(date)} (${date})`,
+        "",
+        "Morning",
+        `Opening cash: ${money(day.openingCash)}`,
+        `Previous terminal: ${money(day.previousTerminal)}`,
+        `Previous terminal checked: ${day.terminalChecked ? "Yes" : "No"}`,
+        "",
+        "After my shift",
+        `Cash count: ${money(day.midCash)}`,
+        `Terminal total: ${money(day.midTerminal)}`,
+        `Terminal photo: ${day.terminalPhotoName || "No photo"}`,
+        "",
+        "Evening",
+        `Closing cash: ${money(day.closingCash)}`,
+        `Closing terminal: ${money(day.closingTerminal)}`,
+        `Cash sales today: ${money(totals.cashSales)}`,
+        `Approved staff cash paid: ${money(totals.staffCashPaid)} (${money(totals.payrollCashPaid)} payroll log, ${money(totals.manualStaffCashPaid)} manual)`,
+        `Cash adjustment: ${money(totals.cashAdjustment)}`,
+        `Cash after approved pay: ${money(totals.netCash)}`,
+        `Daily total cash + terminal: ${money(totals.gross)}`,
+        "",
+        `Notes: ${day.notes || "-"}`
+      ];
+
+      lines.push("", "Week cumulative", "Day,Cash,Terminal,Approved staff cash paid,Cash after pay,Daily total");
+      weekDates().forEach((weekDate) => {
+        const weekDay = cashflowDayView(weekDate, scheduleForDate(weekDate));
+        const weekTotals = cashflowTotalsForDay(weekDay, weekDate);
+        lines.push([
+          niceDate(weekDate),
+          money(weekTotals.cashSales),
+          money(weekTotals.terminal),
+          money(weekTotals.staffCashPaid),
+          money(weekTotals.netCash),
+          money(weekTotals.gross)
+        ].join(","));
+      });
+
+      return lines.join("\n");
+    }
+
+    function renderStaffGrid() {
+      staffGridEl.innerHTML = "";
+
+      state.staff.forEach((person) => {
+        const row = document.createElement("div");
+        row.className = "staff-row";
+
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "Name";
+        const nameInput = document.createElement("input");
+        nameInput.value = person.name;
+        nameLabel.append(nameInput);
+
+        const phoneLabel = document.createElement("label");
+        phoneLabel.textContent = "Messenger";
+        const phoneInput = document.createElement("input");
+        phoneInput.type = "tel";
+        phoneInput.placeholder = "+61...";
+        phoneInput.value = person.phone || "";
+        phoneLabel.append(phoneInput);
+
+        const rateLabel = document.createElement("label");
+        rateLabel.textContent = "Rate";
+        const rateInput = document.createElement("input");
+        rateInput.type = "text";
+        rateInput.min = "0";
+        rateInput.step = "0.01";
+        rateInput.inputMode = "decimal";
+        rateInput.placeholder = "0.00";
+        rateInput.value = person.rate || "";
+        rateLabel.append(rateInput);
+
+        nameInput.addEventListener("input", () => {
+          person.name = nameInput.value.trim() || person.id;
+          saveState();
+          renderRoster();
+          renderMessages();
+        });
+
+        phoneInput.addEventListener("input", () => {
+          person.phone = phoneInput.value;
+          saveState();
+          renderMessages();
+        });
+
+        rateInput.addEventListener("input", () => {
+          person.rate = rateInput.value;
+          saveState();
+          renderPayroll();
+        });
+
+        row.append(nameLabel, phoneLabel, rateLabel);
+        staffGridEl.append(row);
+      });
+    }
+
+    function pickWorker(date, start, end, assignedHours) {
+      const candidates = state.staff
+        .filter((person) => person.id !== "owner" && isAvailable(person.id, date, start, end))
+        .sort((a, b) => (assignedHours[a.id] || 0) - (assignedHours[b.id] || 0));
+
+      return candidates[0]?.id || "";
+    }
+
+    function mergeRosterEntries(entries) {
+      return entries.reduce((merged, entry) => {
+        const previous = merged[merged.length - 1];
+        if (previous && previous.staffId === entry.staffId && previous.end === entry.start) {
+          previous.end = entry.end;
+        } else {
+          merged.push({ ...entry });
+        }
+        return merged;
+      }, []);
+    }
+
+    function availabilitySignature() {
+      const parts = [];
+
+      weekDates().forEach((date) => {
+        state.staff.forEach((person) => {
+          availabilitySlots(person.id, date).forEach((slot) => {
+            parts.push(`${date}:${person.id}:${slot.start}-${slot.end}`);
+          });
+        });
+      });
+
+      return parts.sort().join("|");
+    }
+
+    function autoDraft() {
+      const schedule = currentSchedule();
+      const signature = availabilitySignature();
+      const assignedHours = {};
+      snapshotSchedule("manual auto draft");
+      schedule.roster = {};
+
+      weekDates().forEach((date) => {
+        const boundaries = new Set([openTime, handoverTime, closeTime]);
+        state.staff.forEach((person) => {
+          availabilitySlots(person.id, date).forEach((slot) => {
+            boundaries.add(slot.start);
+            boundaries.add(slot.end);
+          });
+        });
+
+        const sorted = Array.from(boundaries)
+          .sort((a, b) => toMinutes(a) - toMinutes(b))
+          .filter((time) => toMinutes(time) >= toMinutes(openTime) && toMinutes(time) <= toMinutes(closeTime));
+
+        const entries = [];
+        for (let index = 0; index < sorted.length - 1; index += 1) {
+          const start = sorted[index];
+          const end = sorted[index + 1];
+          if (toMinutes(end) <= toMinutes(start)) continue;
+
+          const staffId = isAvailable("owner", date, start, end)
+            ? "owner"
+            : pickWorker(date, start, end, assignedHours);
+
+          if (staffId) {
+            assignedHours[staffId] = (assignedHours[staffId] || 0) + shiftHours(start, end);
+          }
+
+          entries.push({ staffId, start, end });
+        }
+
+        schedule.roster[date] = mergeRosterEntries(entries);
+      });
+
+      schedule.approved = false;
+      schedule.approvedAt = "";
+      schedule.rosterSignature = signature;
+      schedule.rosterNeedsRefresh = false;
+      schedule.rosterNeedsRefreshSignature = "";
+      saveState();
+      renderRoster();
+      renderMessages();
+      renderActuals();
+      showStatus("Draft created.");
+    }
+
+    function ensureRoster() {
+      const schedule = currentSchedule();
+      const signature = availabilitySignature();
+      if (Object.keys(schedule.roster).length === 0) {
+        autoDraft();
+      } else if (schedule.rosterSignature !== signature) {
+        if (schedule.rosterNeedsRefreshSignature !== signature) {
+          schedule.rosterNeedsRefresh = true;
+          schedule.rosterNeedsRefreshSignature = signature;
+          saveState();
+        }
+      }
+    }
+
+    function staffOptions(selectedId) {
+      return [`<option value="">Unassigned</option>`].concat(
+        state.staff.map((person) => `<option value="${person.id}" ${person.id === selectedId ? "selected" : ""}>${person.name}</option>`)
+      ).join("");
+    }
+
+    function isDayApproved(schedule, date) {
+      return Boolean(schedule.approved || schedule.approvedDays?.[date]);
+    }
+
+    function approvedDayCount(schedule) {
+      return weekDates().filter((date) => isDayApproved(schedule, date)).length;
+    }
+
+    function approveDay(date) {
+      ensureRoster();
+      const schedule = currentSchedule();
+      const hasGap = (schedule.roster[date] || []).some((entry) => !entry.staffId);
+      if (!schedule.approvedDays) schedule.approvedDays = {};
+      schedule.approvedDays[date] = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+      schedule.approved = weekDates().every((day) => Boolean(schedule.approvedDays[day]));
+      schedule.approvedAt = schedule.approved ? new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "";
+      saveState();
+      renderRoster();
+      renderMessages();
+      showStatus(hasGap ? `${niceDate(date)} approved with gap.` : `${niceDate(date)} approved.`);
+    }
+
+    function renderRoster() {
+      ensureRoster();
+      const schedule = currentSchedule();
+      rosterGridEl.innerHTML = "";
+      let coveredDays = 0;
+      let gapDays = 0;
+      let shifts = 0;
+
+      weekDates().forEach((date) => {
+        const entries = schedule.roster[date] || [];
+        const hasGap = entries.some((entry) => !entry.staffId);
+        const dayApproved = isDayApproved(schedule, date);
+        if (hasGap) gapDays += 1;
+        else coveredDays += 1;
+        shifts += entries.filter((entry) => entry.staffId).length;
+
+        const card = document.createElement("div");
+        card.className = "day-card";
+
+        const head = document.createElement("div");
+        head.className = "day-card-head";
+        const title = document.createElement("strong");
+        title.textContent = niceDate(date);
+        const coverage = document.createElement("span");
+        coverage.className = `coverage${dayApproved ? " approved" : hasGap ? " gap" : ""}`;
+        coverage.textContent = dayApproved && hasGap ? "Approved gap" : dayApproved ? "Approved" : hasGap ? "Gap" : "Covered";
+        head.append(title, coverage);
+
+        const body = document.createElement("div");
+        body.className = "shift-grid";
+
+        entries.forEach((entry, index) => {
+          const staffLabel = document.createElement("label");
+          staffLabel.textContent = index === 0 ? "Day shift" : "Evening shift";
+          const select = document.createElement("select");
+          select.innerHTML = staffOptions(entry.staffId);
+          staffLabel.append(select);
+
+          const startLabel = document.createElement("label");
+          startLabel.textContent = "Start";
+          const startInput = document.createElement("input");
+          startInput.type = "time";
+          startInput.value = displayTime(entry.start);
+          startLabel.append(startInput);
+
+          const endLabel = document.createElement("label");
+          endLabel.textContent = "End";
+          const endInput = document.createElement("input");
+          endInput.type = "time";
+          endInput.value = displayTime(entry.end);
+          endLabel.append(endInput);
+
+          const removeButton = document.createElement("button");
+          removeButton.type = "button";
+          removeButton.className = "mini-button";
+          removeButton.textContent = index > 1 ? "Remove" : "Keep";
+          removeButton.disabled = index <= 1;
+
+          const saveEntry = () => {
+            entry.staffId = select.value;
+            entry.start = startInput.value;
+            entry.end = storeEndTime(endInput.value);
+            schedule.approved = false;
+            schedule.approvedAt = "";
+            if (schedule.approvedDays) delete schedule.approvedDays[date];
+            saveState();
+            renderRoster();
+            renderMessages();
+          };
+
+          select.addEventListener("change", saveEntry);
+          startInput.addEventListener("change", saveEntry);
+          endInput.addEventListener("change", saveEntry);
+          removeButton.addEventListener("click", () => {
+            schedule.roster[date].splice(index, 1);
+            schedule.approved = false;
+            schedule.approvedAt = "";
+            if (schedule.approvedDays) delete schedule.approvedDays[date];
+            saveState();
+            renderRoster();
+            renderMessages();
+            renderPayroll();
+          });
+
+          body.append(staffLabel, startLabel, endLabel, removeButton);
+        });
+
+        const actions = document.createElement("div");
+        actions.className = "day-card-actions";
+        const addShiftButton = document.createElement("button");
+        addShiftButton.type = "button";
+        addShiftButton.className = "mini-button";
+        addShiftButton.textContent = "Add shift";
+        addShiftButton.addEventListener("click", () => {
+          schedule.roster[date].push({ staffId: "", start: "21:00", end: closeTime });
+          schedule.approved = false;
+          schedule.approvedAt = "";
+          if (schedule.approvedDays) delete schedule.approvedDays[date];
+          saveState();
+          renderRoster();
+          renderMessages();
+          renderPayroll();
+        });
+        const approveDayButton = document.createElement("button");
+        approveDayButton.type = "button";
+        approveDayButton.className = "mini-button";
+        approveDayButton.textContent = dayApproved ? "Approved" : "Approve day";
+        approveDayButton.disabled = dayApproved;
+        approveDayButton.addEventListener("click", () => approveDay(date));
+        actions.append(addShiftButton, approveDayButton);
+
+        card.append(head, body, actions);
+        rosterGridEl.append(card);
+      });
+
+      coveredCountEl.textContent = String(coveredDays);
+      gapCountEl.textContent = String(gapDays);
+      shiftCountEl.textContent = String(shifts);
+      const approvedCount = approvedDayCount(schedule);
+      approvalLabelEl.textContent = schedule.approved && schedule.approvedAt
+        ? `Full week approved ${schedule.approvedAt}`
+        : `${approvedCount}/7 days approved`;
+      renderActuals();
+      renderPayroll();
+      renderHistory();
+    }
+
+    function rosterTextFor(personId) {
+      const schedule = currentSchedule();
+      const person = state.staff.find((item) => item.id === personId);
+      const lines = [`Hi ${person.name}, your shifts for ${currentLocation().name}:`];
+      let count = 0;
+
+      weekDates().forEach((date) => {
+        if (!isDayApproved(schedule, date)) return;
+        (schedule.roster[date] || []).forEach((entry) => {
+          if (entry.staffId === personId) {
+            count += 1;
+            lines.push(`${niceDate(date)}: ${displayTime(entry.start)}-${displayTime(entry.end)}`);
+          }
+        });
+      });
+
+      if (count === 0) lines.push("No approved shifts yet.");
+      const approvedCount = approvedDayCount(schedule);
+      if (approvedCount > 0) lines.push("", `${approvedCount}/7 days approved by Supplier.`);
+      return lines.join("\n");
+    }
+
+    function fullRosterText() {
+      const schedule = currentSchedule();
+      const lines = ["Approved roster", `${weekLabelEl.textContent}`, ""];
+
+      weekDates().forEach((date) => {
+        if (!isDayApproved(schedule, date)) return;
+        lines.push(niceDate(date));
+        (schedule.roster[date] || []).forEach((entry) => {
+          const person = state.staff.find((item) => item.id === entry.staffId);
+          lines.push(`- ${displayTime(entry.start)}-${displayTime(entry.end)}: ${person?.name || "Unassigned"}`);
+        });
+        lines.push("");
+      });
+
+      return lines.join("\n").trim();
+    }
+
+    function renderMessages() {
+      messagesGridEl.innerHTML = "";
+
+      state.staff.forEach((person) => {
+        const card = document.createElement("div");
+        card.className = "message-card";
+
+        const head = document.createElement("div");
+        head.className = "message-head";
+        const name = document.createElement("strong");
+        name.textContent = person.name;
+        const hint = document.createElement("span");
+        hint.className = "hint";
+        hint.textContent = person.phone ? "Ready" : "No phone";
+        head.append(name, hint);
+
+        const textarea = document.createElement("textarea");
+        textarea.readOnly = true;
+        textarea.value = rosterTextFor(person.id);
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.className = "secondary";
+        copyButton.textContent = "Copy";
+        copyButton.addEventListener("click", () => copyText(textarea.value, `${person.name} message copied.`));
+
+        const wa = document.createElement("a");
+        wa.className = "button";
+        wa.target = "_blank";
+        wa.rel = "noopener";
+        wa.textContent = "Messenger";
+        const phone = cleanPhoneNumber(person.phone || "");
+        wa.href = phone
+          ? `https://wa.me/${phone}?text=${encodeURIComponent(textarea.value)}`
+          : `https://wa.me/?text=${encodeURIComponent(textarea.value)}`;
+
+        actions.append(copyButton, wa);
+        card.append(head, textarea, actions);
+        messagesGridEl.append(card);
+      });
+    }
+
+    function actualRowFor(entry, date, { onChange } = {}) {
+      if (!entry.staffId) return null;
+
+      const person = state.staff.find((item) => item.id === entry.staffId);
+      const row = document.createElement("div");
+      row.className = "actual-row";
+
+      const who = document.createElement("div");
+      who.className = "payroll-value";
+      who.innerHTML = `${person?.name || "Unassigned"}<span>${niceDate(date)}</span>`;
+
+      const planned = document.createElement("div");
+      planned.className = "payroll-value";
+      planned.innerHTML = `${displayTime(entry.start)}-${displayTime(entry.end)}<span>planned</span>`;
+
+      const actualStartLabel = document.createElement("label");
+      actualStartLabel.textContent = "Actual start";
+      const actualStartInput = document.createElement("input");
+      actualStartInput.type = "time";
+      actualStartInput.value = displayTime(entry.actualStart || entry.start);
+      actualStartLabel.append(actualStartInput);
+
+      const actualEndLabel = document.createElement("label");
+      actualEndLabel.textContent = "Actual end";
+      const actualEndInput = document.createElement("input");
+      actualEndInput.type = "time";
+      actualEndInput.value = displayTime(entry.actualEnd || entry.end);
+      actualEndLabel.append(actualEndInput);
+
+      const hours = document.createElement("div");
+      hours.className = "payroll-value";
+      hours.innerHTML = `${effectiveShiftHours(entry).toFixed(2)}<span>${entry.actualApproved ? "approved hours" : "not in payroll"}</span>`;
+
+      const approveActualButton = document.createElement("button");
+      approveActualButton.type = "button";
+      approveActualButton.className = "mini-button";
+      approveActualButton.textContent = entry.actualApproved ? "Approved" : "Approve actual";
+      approveActualButton.disabled = Boolean(entry.actualApproved);
+
+      const refreshActualViews = () => {
+        renderTodayScreen();
+        renderActuals();
+        renderPayroll();
+        renderHistory();
+        renderSummary();
+        renderAudit();
+        if (typeof onChange === "function") onChange();
+      };
+
+      const saveActual = () => {
+        entry.actualStart = actualStartInput.value;
+        entry.actualEnd = storeEndTime(actualEndInput.value);
+        entry.actualApproved = false;
+        entry.actualApprovedAt = "";
+        saveState();
+        refreshActualViews();
+      };
+
+      approveActualButton.addEventListener("click", () => {
+        entry.actualStart = actualStartInput.value;
+        entry.actualEnd = storeEndTime(actualEndInput.value);
+        entry.actualApproved = true;
+        entry.actualApprovedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+        syncActualShiftToLedger(entry, date, "actual-hours:approve");
+        saveState();
+        refreshActualViews();
+        showStatus(`${person?.name || "Shift"} actual hours approved.`);
+      });
+
+      actualStartInput.addEventListener("change", saveActual);
+      actualEndInput.addEventListener("change", saveActual);
+
+      row.append(who, planned, actualStartLabel, actualEndLabel, hours, approveActualButton);
+      return row;
+    }
+
+    function renderActuals() {
+      const schedule = currentSchedule();
+      actualsGridEl.innerHTML = "";
+
+      weekDates().forEach((date) => {
+        (schedule.roster[date] || []).forEach((entry) => {
+          const row = actualRowFor(entry, date);
+          if (row) actualsGridEl.append(row);
+        });
+      });
+    }
+
+    function effectiveShiftHours(entry) {
+      return shiftHours(entry.actualStart || entry.start, entry.actualEnd || entry.end);
+    }
+
+    function staffHours() {
+      const schedule = currentSchedule();
+      const totals = {};
+
+      Object.values(schedule.roster).forEach((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.staffId) return;
+          if (!entry.actualApproved) return;
+          totals[entry.staffId] = (totals[entry.staffId] || 0) + effectiveShiftHours(entry);
+        });
+      });
+
+      return totals;
+    }
+
+    function repairPayrollCashData20260108() {
+      if (state.payrollCashRepair20260108) return false;
+
+      const schedule = scheduleForWeek("2026-01-05");
+      const today = "2026-01-08";
+      const yesterday = "2026-01-07";
+      const owner = state.staff.find((person) => person.id === "owner");
+      const ownerPayroll = normalizePayroll(schedule.payroll.owner);
+      const ownerHours = staffHours().owner || 0;
+      const ownerRate = Number.parseFloat(owner?.rate || "0") || 0;
+      const ownerEarned = ownerHours * ownerRate;
+      const targetToPay = 200;
+      const paidBeforeToday = Math.max(0, ownerEarned - targetToPay);
+
+      ownerPayroll.cashPaid = "";
+      ownerPayroll.transferPaid = "";
+      ownerPayroll.approvedCashPaid = paidBeforeToday ? String(paidBeforeToday) : "";
+      ownerPayroll.approvedTransferPaid = "";
+      ownerPayroll.paymentDate = today;
+      ownerPayroll.paymentApproved = paidBeforeToday > 0;
+      ownerPayroll.paymentApprovedAt = paidBeforeToday > 0 ? "Repaired 8/1/26" : "";
+      ownerPayroll.draftUpdatedAt = "";
+      ownerPayroll.payments = paidBeforeToday > 0 ? [{
+        id: "repair-owner-cash-2026-01-07",
+        date: yesterday,
+        cash: String(paidBeforeToday),
+        transfer: "",
+        approvedAt: "Repaired 8/1/26"
+      }] : [];
+      schedule.payroll.owner = ownerPayroll;
+
+      schedule.cashflow[today] = normalizeCashflowDay(schedule.cashflow[today]);
+      schedule.cashflow[today].openingCash = "170";
+      schedule.cashflow[today].staffCashPaid = "";
+      schedule.cashflow[today].updatedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+
+      state.payrollCashRepair20260108 = true;
+      saveState();
+      return true;
+    }
+
+    function recoverMonWedActuals20260108() {
+      if (state.monWedActualRecovery20260108) return false;
+
+      const schedule = scheduleForWeek("2026-01-05");
+      const dates = weekRangeDates("2026-01-05").slice(0, 3);
+      const needsRecovery = dates.some((date) => !schedule.approvedDays?.[date]) ||
+        dates.some((date) => (schedule.roster?.[date] || []).some((entry) => entry.staffId && !entry.actualApproved));
+
+      if (!needsRecovery) {
+        state.monWedActualRecovery20260108 = true;
+        saveState();
+        return false;
+      }
+
+      snapshotSchedule("recover Mon-Wed approvals and actuals");
+      const approvedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+      if (!schedule.approvedDays) schedule.approvedDays = {};
+
+      dates.forEach((date) => {
+        schedule.approvedDays[date] = schedule.approvedDays[date] || approvedAt;
+        (schedule.roster?.[date] || []).forEach((entry) => {
+          if (!entry.staffId) return;
+          entry.actualStart = entry.actualStart || entry.start;
+          entry.actualEnd = entry.actualEnd || entry.end;
+          entry.actualApproved = true;
+          entry.actualApprovedAt = entry.actualApprovedAt || approvedAt;
+        });
+      });
+
+      const totals = staffHours();
+      const owner = state.staff.find((person) => person.id === "owner");
+      const ownerRate = Number.parseFloat(owner?.rate || "0") || 0;
+      const ownerEarned = (totals.owner || 0) * ownerRate;
+      const targetToPay = 200;
+      const paidBeforeToday = Math.max(0, ownerEarned - targetToPay);
+      const today = isoDate(new Date());
+      const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1));
+      const ownerPayroll = normalizePayroll(schedule.payroll.owner);
+
+      ownerPayroll.cashPaid = "";
+      ownerPayroll.transferPaid = "";
+      ownerPayroll.paymentDate = today;
+      ownerPayroll.approvedCashPaid = paidBeforeToday ? String(paidBeforeToday) : "";
+      ownerPayroll.approvedTransferPaid = "";
+      ownerPayroll.paymentApproved = paidBeforeToday > 0;
+      ownerPayroll.paymentApprovedAt = paidBeforeToday > 0 ? approvedAt : "";
+      ownerPayroll.draftUpdatedAt = "";
+      ownerPayroll.payments = paidBeforeToday > 0 ? [{
+        id: "recovery-owner-cash-2026-01-07",
+        date: yesterday,
+        cash: String(paidBeforeToday),
+        transfer: "",
+        approvedAt
+      }] : [];
+      schedule.payroll.owner = ownerPayroll;
+
+      schedule.approved = weekRangeDates("2026-01-05").every((date) => Boolean(schedule.approvedDays[date]));
+      schedule.approvedAt = schedule.approved ? approvedAt : schedule.approvedAt || "";
+      state.monWedActualRecovery20260108 = true;
+      saveState();
+      return true;
+    }
+
+    function applyCanonicalWeekData20260108() {
+      const schedule = scheduleForWeek("2026-01-05");
+      const requiredRosterDates = ["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08"];
+      const hasRosterRows = requiredRosterDates.every((date) => Array.isArray(schedule.roster?.[date]) && schedule.roster[date].length);
+      const hasActualRows = requiredRosterDates.every((date) => (
+        Array.isArray(schedule.roster?.[date]) &&
+        schedule.roster[date].length &&
+        schedule.roster[date].every((entry) => entry.actualStart && entry.actualEnd && entry.actualApproved)
+      ));
+      if (state.canonicalWeekData20260108v3 && hasRosterRows && hasActualRows) return false;
+
+      snapshotSchedule("canonical week data 2026-01-05");
+
+      schedule.roster = {
+        "2026-01-05": [
+          { staffId: "owner", start: "07:30", end: "10:30", actualStart: "07:30", actualEnd: "10:30", actualApproved: true, actualApprovedAt: "Canonical 8/1/26" },
+          { staffId: "staff_a", start: "10:30", end: "17:30", actualStart: "10:30", actualEnd: "17:30", actualApproved: true, actualApprovedAt: "Canonical 8/1/26" },
+          { staffId: "staff_b", start: "17:30", end: closeTime, actualStart: "17:30", actualEnd: closeTime, actualApproved: true, actualApprovedAt: "Canonical 8/1/26" }
+        ],
+        "2026-01-06": [
+          { staffId: "owner", start: "09:00", end: "17:30", actualStart: "09:00", actualEnd: "17:30", actualApproved: true, actualApprovedAt: "Canonical 8/1/26" },
+          { staffId: "staff_b", start: "17:30", end: closeTime, actualStart: "17:30", actualEnd: closeTime, actualApproved: true, actualApprovedAt: "Canonical 8/1/26" }
+        ],
+        "2026-01-07": [
+          { staffId: "owner", start: "07:30", end: "18:30", actualStart: "07:30", actualEnd: "18:30", actualApproved: true, actualApprovedAt: "Canonical 8/1/26" },
+          { staffId: "staff_a", start: "18:30", end: closeTime, actualStart: "18:30", actualEnd: closeTime, actualApproved: true, actualApprovedAt: "Canonical 8/1/26" }
+        ],
+        "2026-01-08": [
+          { staffId: "owner", start: "07:30", end: "17:30", actualStart: "07:30", actualEnd: "17:30", actualApproved: true, actualApprovedAt: "Canonical v2 8/1/26" },
+          { staffId: "staff_b", start: "17:30", end: closeTime, actualStart: "17:30", actualEnd: closeTime, actualApproved: true, actualApprovedAt: "Canonical v2 8/1/26" }
+        ],
+        "2026-01-09": schedule.roster?.["2026-01-09"] || [],
+        "2026-01-10": schedule.roster?.["2026-01-10"] || [],
+        "2026-01-11": schedule.roster?.["2026-01-11"] || []
+      };
+
+      schedule.approvedDays = {
+        ...(schedule.approvedDays || {}),
+        "2026-01-05": "Canonical 8/1/26",
+        "2026-01-06": "Canonical 8/1/26",
+        "2026-01-07": "Canonical 8/1/26",
+        "2026-01-08": "Canonical v2 8/1/26"
+      };
+      schedule.approved = false;
+      schedule.approvedAt = "";
+      schedule.rosterSignature = rosterStructureSignature(schedule, "2026-01-05");
+      schedule.rosterNeedsRefresh = false;
+      schedule.rosterNeedsRefreshSignature = "";
+
+      const payrollDefaults = (paymentDate = "2026-01-08") => ({
+        cashPaid: "",
+        transferPaid: "",
+        approvedCashPaid: "",
+        approvedTransferPaid: "",
+        paymentDate,
+        draftPaymentDate: "",
+        payments: [],
+        paymentApproved: false,
+        paymentApprovedAt: "",
+        draftUpdatedAt: ""
+      });
+
+      schedule.payroll.owner = {
+        ...payrollDefaults("2026-01-08"),
+        approvedCashPaid: "450",
+        payments: [
+          { id: "canonical-owner-cash-2026-01-06", date: "2026-01-06", cash: "230", transfer: "", approvedAt: "Canonical 8/1/26" },
+          { id: "canonical-owner-cash-2026-01-07", date: "2026-01-07", cash: "220", transfer: "", approvedAt: "Canonical 8/1/26" }
+        ],
+        paymentApproved: true,
+        paymentApprovedAt: "Canonical 8/1/26"
+      };
+
+      schedule.payroll.staff_a = {
+        ...payrollDefaults("2026-01-08"),
+        approvedCashPaid: "140",
+        payments: [
+          { id: "canonical-staff_a-cash-2026-01-05", date: "2026-01-05", cash: "140", transfer: "", approvedAt: "Canonical 8/1/26" }
+        ],
+        paymentApproved: true,
+        paymentApprovedAt: "Canonical 8/1/26"
+      };
+
+      schedule.payroll.staff_b = {
+        ...payrollDefaults("2026-01-08")
+      };
+
+      schedule.payroll.supplier = {
+        ...payrollDefaults("2026-01-08")
+      };
+
+      schedule.cashflow["2026-01-08"] = normalizeCashflowDay(schedule.cashflow["2026-01-08"]);
+      schedule.cashflow["2026-01-08"].openingCash = "170";
+      schedule.cashflow["2026-01-08"].staffCashPaid = "";
+
+      state.canonicalWeekData20260108 = true;
+      state.canonicalWeekData20260108v2 = true;
+      state.canonicalWeekData20260108v3 = true;
+      saveState();
+      return true;
+    }
+
+    function approvedShift(staffId, start, end, approvedAt = "Journal update 15/1/26") {
+      return {
+        staffId,
+        start,
+        end,
+        actualStart: start,
+        actualEnd: end,
+        actualApproved: Boolean(staffId),
+        actualApprovedAt: staffId ? approvedAt : ""
+      };
+    }
+
+    function plannedShift(staffId, start, end) {
+      return {
+        staffId,
+        start,
+        end,
+        actualStart: start,
+        actualEnd: end,
+        actualApproved: false,
+        actualApprovedAt: ""
+      };
+    }
+
+    function blankPayroll(paymentDate) {
+      return {
+        cashPaid: "",
+        transferPaid: "",
+        approvedCashPaid: "",
+        approvedTransferPaid: "",
+        paymentDate,
+        draftPaymentDate: "",
+        payments: [],
+        paymentApproved: false,
+        paymentApprovedAt: "",
+        draftUpdatedAt: ""
+      };
+    }
+
+    function setPayrollPayments(schedule, staffId, paymentDate, payments) {
+      const cashTotal = payments.reduce((total, payment) => total + numberValue(payment.cash), 0);
+      const transferTotal = payments.reduce((total, payment) => total + numberValue(payment.transfer), 0);
+      schedule.payroll[staffId] = {
+        ...blankPayroll(paymentDate),
+        approvedCashPaid: cashTotal ? String(cashTotal) : "",
+        approvedTransferPaid: transferTotal ? String(transferTotal) : "",
+        payments,
+        paymentApproved: payments.length > 0,
+        paymentApprovedAt: payments.length > 0 ? "Journal update 15/1/26" : ""
+      };
+    }
+
+    function applyJournalData20260115() {
+      if (state.journalData20260115v1) return false;
+
+      const previousSchedule = scheduleForWeek("2026-01-05");
+      const currentScheduleData = scheduleForWeek("2026-01-12");
+      const approvedAt = "Journal update 15/1/26";
+
+      previousSchedule.roster = {
+        "2026-01-05": [
+          approvedShift("owner", "07:30", "10:30", approvedAt),
+          approvedShift("staff_a", "10:30", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-06": [
+          approvedShift("owner", "09:00", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-07": [
+          approvedShift("owner", "07:30", "18:30", approvedAt),
+          approvedShift("staff_a", "18:30", closeTime, approvedAt)
+        ],
+        "2026-01-08": [
+          approvedShift("owner", "07:30", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-09": previousSchedule.roster?.["2026-01-09"] || [],
+        "2026-01-10": previousSchedule.roster?.["2026-01-10"] || [],
+        "2026-01-11": previousSchedule.roster?.["2026-01-11"] || []
+      };
+      previousSchedule.approvedDays = {
+        "2026-01-05": approvedAt,
+        "2026-01-06": approvedAt,
+        "2026-01-07": approvedAt,
+        "2026-01-08": approvedAt
+      };
+      previousSchedule.approved = false;
+      previousSchedule.approvedAt = "";
+      previousSchedule.rosterSignature = rosterStructureSignature(previousSchedule, "2026-01-05");
+      previousSchedule.rosterNeedsRefresh = false;
+
+      setPayrollPayments(previousSchedule, "owner", "2026-01-08", [
+        { id: "journal-owner-cash-2026-01-05", date: "2026-01-05", cash: "60", transfer: "", approvedAt },
+        { id: "journal-owner-cash-2026-01-06", date: "2026-01-06", cash: "170", transfer: "", approvedAt },
+        { id: "journal-owner-cash-2026-01-07", date: "2026-01-07", cash: "220", transfer: "", approvedAt }
+      ]);
+      setPayrollPayments(previousSchedule, "staff_a", "2026-01-08", [
+        { id: "journal-staff_a-cash-2026-01-05", date: "2026-01-05", cash: "140", transfer: "", approvedAt }
+      ]);
+      previousSchedule.payroll.staff_b = blankPayroll("2026-01-08");
+      previousSchedule.payroll.supplier = blankPayroll("2026-01-08");
+
+      previousSchedule.cashflow["2026-01-08"] = normalizeCashflowDay(previousSchedule.cashflow["2026-01-08"]);
+      previousSchedule.cashflow["2026-01-08"].openingCash = "170";
+      previousSchedule.cashflow["2026-01-08"].updatedAt = approvedAt;
+
+      currentScheduleData.roster = {
+        "2026-01-12": [
+          approvedShift("owner", "07:30", "17:30", approvedAt),
+          approvedShift("staff_a", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-13": [
+          approvedShift("owner", "07:30", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-14": [
+          approvedShift("owner", "08:00", "15:30", approvedAt),
+          approvedShift("staff_a", "16:30", closeTime, approvedAt)
+        ],
+        "2026-01-15": [
+          approvedShift("owner", "07:30", "17:30", approvedAt),
+          plannedShift("staff_a", "17:30", closeTime)
+        ],
+        "2026-01-16": [
+          plannedShift("owner", "07:30", closeTime)
+        ],
+        "2026-01-17": [
+          plannedShift("owner", "07:30", closeTime)
+        ],
+        "2026-01-18": [
+          plannedShift("", "07:30", closeTime)
+        ]
+      };
+      currentScheduleData.approvedDays = {
+        "2026-01-12": approvedAt,
+        "2026-01-13": approvedAt,
+        "2026-01-14": approvedAt,
+        "2026-01-15": approvedAt
+      };
+      currentScheduleData.approved = false;
+      currentScheduleData.approvedAt = "";
+      currentScheduleData.rosterSignature = rosterStructureSignature(currentScheduleData, "2026-01-12");
+      currentScheduleData.rosterNeedsRefresh = false;
+      state.staff.forEach((person) => {
+        currentScheduleData.payroll[person.id] = normalizePayroll(currentScheduleData.payroll[person.id]);
+      });
+
+      state.activeWeekStart = "2026-01-12";
+      state.rosterStructureSyncStamp = "manual-journal-20260115";
+      state.journalData20260115v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyPayrollActualsCorrection20260115() {
+      if (state.payrollActualsCorrection20260115v1) return false;
+
+      const schedule = scheduleForWeek("2026-01-12");
+      const correctionAt = "Payroll actuals correction 15/1/26";
+      const actualRules = {
+        "2026-01-12": { owner: true, staff_a: true },
+        "2026-01-13": { owner: true, staff_b: true },
+        "2026-01-14": { owner: true, staff_a: true },
+        "2026-01-15": { owner: true, staff_a: true }
+      };
+
+      Object.entries(actualRules).forEach(([date, staffRules]) => {
+        (schedule.roster?.[date] || []).forEach((entry) => {
+          if (!entry.staffId) {
+            entry.actualApproved = false;
+            entry.actualApprovedAt = "";
+            return;
+          }
+          if (staffRules[entry.staffId] === undefined) return;
+          if (staffRules[entry.staffId] !== true) return;
+          entry.actualApproved = true;
+          entry.actualApprovedAt = entry.actualApprovedAt || correctionAt;
+          entry.actualStart = entry.actualStart || entry.start;
+          entry.actualEnd = entry.actualEnd || entry.end;
+        });
+      });
+
+      schedule.approvedDays = {
+        ...(schedule.approvedDays || {}),
+        "2026-01-12": schedule.approvedDays?.["2026-01-12"] || correctionAt,
+        "2026-01-13": schedule.approvedDays?.["2026-01-13"] || correctionAt,
+        "2026-01-14": schedule.approvedDays?.["2026-01-14"] || correctionAt,
+        "2026-01-15": schedule.approvedDays?.["2026-01-15"] || correctionAt
+      };
+      schedule.rosterSignature = rosterStructureSignature(schedule, "2026-01-12");
+      schedule.rosterNeedsRefresh = false;
+      state.payrollActualsCorrection20260115v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyStaffAPayrollCorrection20260115() {
+      if (state.staff_aPayrollCorrection20260115v1) return false;
+
+      const schedule = scheduleForWeek("2026-01-12");
+      const payroll = normalizePayroll(schedule.payroll?.staff_a);
+      const approvedAt = "Staff A payroll correction 15/1/26";
+      payroll.payments = [
+        {
+          id: "finance-staff_a-cash-2026-01-12",
+          date: "2026-01-14",
+          cash: "130",
+          transfer: "",
+          approvedAt
+        },
+        {
+          id: "finance-staff_a-cash-2026-01-14",
+          date: "2026-01-15",
+          cash: "150",
+          transfer: "",
+          approvedAt
+        }
+      ];
+      payroll.approvedCashPaid = "280";
+      payroll.approvedTransferPaid = "";
+      payroll.cashPaid = "";
+      payroll.transferPaid = "";
+      payroll.paymentDate = "2026-01-15";
+      payroll.paymentApproved = true;
+      payroll.paymentApprovedAt = approvedAt;
+      payroll.draftUpdatedAt = "";
+      schedule.payroll.staff_a = payroll;
+      state.staff_aPayrollCorrection20260115v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyOwnerPayrollCorrection20260115() {
+      if (state.ownerPayrollCorrection20260115v1) return false;
+
+      const schedule = scheduleForWeek("2026-01-12");
+      const payroll = normalizePayroll(schedule.payroll?.owner);
+      const approvedAt = "Owner payroll correction 15/1/26";
+      payroll.payments = [
+        { id: "finance-owner-cash-2026-01-12", date: "2026-01-12", cash: "200", transfer: "", approvedAt },
+        { id: "finance-owner-cash-2026-01-13", date: "2026-01-13", cash: "200", transfer: "", approvedAt },
+        { id: "finance-owner-cash-2026-01-14", date: "2026-01-14", cash: "150", transfer: "", approvedAt },
+        { id: "finance-owner-cash-2026-01-15", date: "2026-01-15", cash: "200", transfer: "", approvedAt }
+      ];
+      payroll.approvedCashPaid = "750";
+      payroll.approvedTransferPaid = "";
+      payroll.cashPaid = "";
+      payroll.transferPaid = "";
+      payroll.paymentDate = "2026-01-15";
+      payroll.paymentApproved = true;
+      payroll.paymentApprovedAt = approvedAt;
+      payroll.draftUpdatedAt = "";
+      schedule.payroll.owner = payroll;
+      state.ownerPayrollCorrection20260115v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyRosterCorrection20260115() {
+      if (state.rosterCorrection20260115v2) return false;
+
+      const schedule = scheduleForWeek("2026-01-12");
+      const dayRoster = schedule.roster?.["2026-01-14"] || [];
+      const ownerShift = dayRoster.find((entry) => entry.staffId === "owner" && entry.end === "15:30");
+      if (!ownerShift) {
+        state.rosterCorrection20260115v2 = true;
+        saveState();
+        return false;
+      }
+
+      ownerShift.start = "08:00";
+      ownerShift.actualStart = "08:00";
+      ownerShift.actualApproved = true;
+      ownerShift.actualApprovedAt = "Roster correction 15/1/26";
+      schedule.approvedDays = { ...(schedule.approvedDays || {}), "2026-01-14": "Roster correction 15/1/26" };
+      schedule.rosterSignature = rosterStructureSignature(schedule, "2026-01-12");
+      schedule.rosterNeedsRefresh = false;
+      state.rosterCorrection20260115v2 = true;
+      saveState();
+      return true;
+    }
+
+    function upsertPayrollPayments(schedule, staffId, paymentDate, payments) {
+      const payroll = normalizePayroll(schedule.payroll?.[staffId]);
+      const existing = payroll.payments.filter((payment) => !payments.some((nextPayment) => nextPayment.id === payment.id));
+      payroll.payments = [...existing, ...payments];
+      const totals = payroll.payments.reduce((sum, payment) => {
+        sum.cash += numberValue(payment.cash);
+        sum.transfer += numberValue(payment.transfer);
+        return sum;
+      }, { cash: 0, transfer: 0 });
+      payroll.approvedCashPaid = totals.cash ? String(totals.cash) : "";
+      payroll.approvedTransferPaid = totals.transfer ? String(totals.transfer) : "";
+      payroll.paymentDate = paymentDate;
+      payroll.paymentApproved = payroll.payments.length > 0;
+      payroll.paymentApprovedAt = payroll.payments.length > 0 ? "Finance ledger update 15/1/26" : "";
+      payroll.cashPaid = "";
+      payroll.transferPaid = "";
+      payroll.draftUpdatedAt = "";
+      schedule.payroll[staffId] = payroll;
+    }
+
+    function setCashflowEntry(schedule, date, values) {
+      schedule.cashflow[date] = {
+        ...normalizeCashflowDay(schedule.cashflow?.[date]),
+        ...values,
+        terminalChecked: values.terminalChecked ?? normalizeCashflowDay(schedule.cashflow?.[date]).terminalChecked,
+        updatedAt: "Finance ledger update 15/1/26"
+      };
+    }
+
+    function applyFinanceLedger20260115() {
+      if (state.financeLedger20260115v1) return false;
+
+      const previousSchedule = scheduleForWeek("2026-01-05");
+      const currentScheduleData = scheduleForWeek("2026-01-12");
+      const approvedAt = "Finance ledger update 15/1/26";
+
+      upsertPayrollPayments(previousSchedule, "owner", "2026-01-11", [
+        { id: "finance-owner-cash-2026-01-09", date: "2026-01-09", cash: "200", transfer: "", approvedAt },
+        { id: "finance-owner-cash-2026-01-11", date: "2026-01-11", cash: "120", transfer: "", approvedAt }
+      ]);
+      upsertPayrollPayments(previousSchedule, "staff_a", "2026-01-12", [
+        { id: "finance-staff_a-cash-2026-01-12-prior-period", date: "2026-01-12", cash: "320", transfer: "", approvedAt }
+      ]);
+      upsertPayrollPayments(currentScheduleData, "owner", "2026-01-14", [
+        { id: "finance-owner-cash-2026-01-12", date: "2026-01-12", cash: "200", transfer: "", approvedAt },
+        { id: "finance-owner-cash-2026-01-13", date: "2026-01-13", cash: "200", transfer: "", approvedAt },
+        { id: "finance-owner-cash-2026-01-14", date: "2026-01-14", cash: "150", transfer: "", approvedAt },
+        { id: "finance-owner-cash-2026-01-15", date: "2026-01-15", cash: "200", transfer: "", approvedAt }
+      ]);
+      upsertPayrollPayments(currentScheduleData, "staff_a", "2026-01-15", [
+        { id: "finance-staff_a-cash-2026-01-14", date: "2026-01-14", cash: "130", transfer: "", approvedAt },
+        { id: "finance-staff_a-cash-2026-01-15", date: "2026-01-15", cash: "150", transfer: "", approvedAt }
+      ]);
+
+      setCashflowEntry(previousSchedule, "2026-01-07", {
+        closingTerminal: "2043.11",
+        terminalChecked: true,
+        notes: "Terminal final report from screenshot: net sales 2010.50, fees 32.61, amount collected 2043.11. Cash not confirmed."
+      });
+      setCashflowEntry(previousSchedule, "2026-01-08", {
+        openingCash: "170",
+        closingTerminal: "3022.76",
+        terminalChecked: true,
+        notes: "Cashflow cycle starts with opening cash 170. Terminal final report confirmed 16/1/26: net sales 2974.50, fees 48.26, amount collected 3022.76."
+      });
+      setCashflowEntry(previousSchedule, "2026-01-09", {
+        openingCash: "0",
+        closingCash: "250",
+        closingTerminal: "1947.06",
+        terminalChecked: true,
+        notes: "Known cash for Owner shift 450; Owner cash payment 200; 250 left. Opening cash before this checkpoint not confirmed, so opening is set to 0 only to display known cash movement."
+      });
+      setCashflowEntry(previousSchedule, "2026-01-10", {
+        closingTerminal: "1722.47",
+        terminalChecked: true,
+        notes: "Terminal final report from screenshot: net sales 1695.00, fees 27.47, amount collected 1722.47. Cash not confirmed."
+      });
+      setCashflowEntry(previousSchedule, "2026-01-11", {
+        openingCash: "60",
+        closingCash: "350",
+        closingTerminal: "1883.51",
+        terminalChecked: true,
+        notes: "Cash for day 410; Owner cash payment 120; 60 carried from previous day plus 290 today leaves 350. Terminal final amount collected 1883.51; total with cash 2233.51."
+      });
+
+      setCashflowEntry(currentScheduleData, "2026-01-12", {
+        openingCash: "350",
+        midCash: "440",
+        midTerminal: "1161.54",
+        closingCash: "440",
+        closingTerminal: "1543.63",
+        staffCashPaid: "320",
+        terminalChecked: true,
+        notes: "Owner shift cash 290; Owner cash payment 200 via payroll log; cash left 440. Staff A prior-period cash payment 320 recorded manually in cashflow, leaving 120 for Staff A shift. Staff A shift cash 320; next opening 440."
+      });
+      setCashflowEntry(currentScheduleData, "2026-01-13", {
+        openingCash: "440",
+        midCash: "580",
+        closingCash: "580",
+        closingTerminal: "2242.77",
+        terminalChecked: true,
+        notes: "Known Owner shift cash 340; Owner cash payment 200 via payroll log; 580 left and then removed as periodic cash withdrawal. Staff B evening cash is unknown and not counted; next day opening was 0."
+      });
+      setCashflowEntry(currentScheduleData, "2026-01-14", {
+        openingCash: "0",
+        midCash: "150",
+        midTerminal: "807.39",
+        closingCash: "600",
+        closingTerminal: "2034.00",
+        cashAdjustment: "10",
+        terminalChecked: true,
+        notes: "Owner shift cash 420; Owner cash payment 150; Staff A cash payment 130 for Monday; 10 added from untracked till cash, so cash sales stay 870. Staff A shift cash 450; next opening 600."
+      });
+      setCashflowEntry(currentScheduleData, "2026-01-15", {
+        openingCash: "600",
+        midCash: "1260",
+        midTerminal: "1348.50",
+        closingCash: "1420",
+        closingTerminal: "2057.81",
+        terminalChecked: true,
+        notes: "Confirmed 16/1/26. Start cash 600. Owner shift cash 1010; Owner cash payment 200 and Staff A cash payment 150 for 08.07 are recorded via payroll, leaving 1260 after Owner shift. Staff A evening cash 160; next opening 1420. Terminal full day: net sales 2025.00, fees 32.81, amount collected 2057.81."
+      });
+
+      state.financeLedger20260115v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyConfirmedFinanceImport20260116() {
+      if (state.confirmedFinanceImport20260116v1) return false;
+
+      const previousSchedule = scheduleForWeek("2026-01-05");
+      const currentScheduleData = scheduleForWeek("2026-01-12");
+      const approvedAt = "Confirmed finance import 16/1/26";
+
+      const staff_aShift = (currentScheduleData.roster?.["2026-01-15"] || []).find((entry) => entry.staffId === "staff_a");
+      if (staff_aShift) {
+        staff_aShift.actualStart = "17:30";
+        staff_aShift.actualEnd = closeTime;
+        staff_aShift.actualApproved = true;
+        staff_aShift.actualApprovedAt = approvedAt;
+      }
+      currentScheduleData.approvedDays = { ...(currentScheduleData.approvedDays || {}), "2026-01-15": approvedAt };
+      currentScheduleData.rosterSignature = rosterStructureSignature(currentScheduleData, "2026-01-12");
+      currentScheduleData.rosterNeedsRefresh = false;
+
+      setPayrollPayments(currentScheduleData, "owner", "2026-01-15", [
+        { id: "confirmed-owner-cash-2026-01-12", date: "2026-01-12", cash: "200", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-13", date: "2026-01-13", cash: "200", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-14", date: "2026-01-14", cash: "150", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-15", date: "2026-01-15", cash: "200", transfer: "", approvedAt }
+      ]);
+      setPayrollPayments(currentScheduleData, "staff_a", "2026-01-15", [
+        { id: "confirmed-staff_a-cash-2026-01-14", date: "2026-01-14", cash: "130", transfer: "", approvedAt },
+        { id: "confirmed-staff_a-cash-2026-01-15", date: "2026-01-15", cash: "150", transfer: "", approvedAt }
+      ]);
+
+      setCashflowEntry(previousSchedule, "2026-01-08", {
+        openingCash: "170",
+        closingTerminal: "3022.76",
+        terminalChecked: true,
+        notes: "Cashflow cycle starts with opening cash 170. Terminal final report confirmed 16/1/26: net sales 2974.50, fees 48.26, amount collected 3022.76."
+      });
+      setCashflowEntry(currentScheduleData, "2026-01-15", {
+        openingCash: "600",
+        midCash: "1260",
+        midTerminal: "1348.50",
+        closingCash: "1420",
+        closingTerminal: "2057.81",
+        staffCashPaid: "",
+        cashAdjustment: "",
+        terminalChecked: true,
+        notes: "Confirmed 16/1/26. Start cash 600. Owner shift cash 1010; Owner cash payment 200 and Staff A cash payment 150 for 08.07 are recorded via payroll, leaving 1260 after Owner shift. Staff A evening cash 160; next opening 1420. Terminal full day: net sales 2025.00, fees 32.81, amount collected 2057.81."
+      });
+
+      state.confirmedFinanceImport20260116v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyOpeningCash20260116() {
+      if (state.openingCash20260116v1) return false;
+
+      const schedule = scheduleForWeek("2026-01-12");
+      setCashflowEntry(schedule, "2026-01-16", {
+        openingCash: "1420",
+        previousTerminal: "2057.81",
+        notes: [
+          normalizeCashflowDay(schedule.cashflow?.["2026-01-16"]).notes,
+          "Confirmed 16/1/26: opening cash equals 09.07 closing cash 1420; previous terminal total 2057.81."
+        ].filter(Boolean).join("\n")
+      });
+
+      state.openingCash20260116v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyCashflowPayroll20260116() {
+      if (state.cashflowPayroll20260116v1) return false;
+
+      const schedule = scheduleForWeek("2026-01-12");
+      const approvedAt = "Cashflow payroll update 16/1/26";
+      const ownerShift = (schedule.roster?.["2026-01-16"] || []).find((entry) => entry.staffId === "owner");
+      if (ownerShift) {
+        ownerShift.actualStart = "07:30";
+        ownerShift.actualEnd = closeTime;
+        ownerShift.actualApproved = true;
+        ownerShift.actualApprovedAt = ownerShift.actualApprovedAt || approvedAt;
+      }
+      schedule.approvedDays = { ...(schedule.approvedDays || {}), "2026-01-16": schedule.approvedDays?.["2026-01-16"] || approvedAt };
+      schedule.rosterSignature = rosterStructureSignature(schedule, "2026-01-12");
+      schedule.rosterNeedsRefresh = false;
+
+      setPayrollPayments(schedule, "owner", "2026-01-16", [
+        { id: "confirmed-owner-cash-2026-01-12", date: "2026-01-12", cash: "200", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-13", date: "2026-01-13", cash: "200", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-14", date: "2026-01-14", cash: "150", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-15", date: "2026-01-15", cash: "200", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-16", date: "2026-01-16", cash: "330", transfer: "", approvedAt }
+      ]);
+
+      setCashflowEntry(schedule, "2026-01-16", {
+        openingCash: "1420",
+        previousTerminal: "2057.81",
+        closingCash: "1270",
+        closingTerminal: "2180.76",
+        staffCashPaid: "",
+        cashAdjustment: "",
+        terminalChecked: true,
+        notes: "Confirmed 16/1/26. Cash sales 180; Owner cash payment 330 for 16.5 hours is recorded via payroll. Opening cash 1420 + cash sales 180 - payroll 330 = closing cash 1270. Terminal closing 2180.76."
+      });
+
+      state.cashflowPayroll20260116v1 = true;
+      saveState();
+      return true;
+    }
+
+    function applyCashCorrection20260116v2() {
+      if (state.cashCorrection20260116v2) return false;
+
+      const schedule = scheduleForWeek("2026-01-12");
+      setCashflowEntry(schedule, "2026-01-16", {
+        openingCash: "1420",
+        previousTerminal: "2057.81",
+        closingCash: "1300",
+        closingTerminal: "2180.76",
+        staffCashPaid: "",
+        cashAdjustment: "",
+        terminalChecked: true,
+        notes: "Corrected 17/1/26. Cash sales 210; Owner cash payment 330 for 16.5 hours is recorded via payroll. Opening cash 1420 + cash sales 210 - payroll 330 = closing cash 1300. Terminal closing 2180.76."
+      });
+
+      state.cashCorrection20260116v2 = true;
+      saveState();
+      return true;
+    }
+
+    function applyStaffAPriorPeriodPayment20260121() {
+      const schedule = scheduleForWeek("2026-01-05");
+      const approvedAt = "Staff A prior-period payment repair 111/1/26";
+      const expectedPayments = [
+        {
+          id: "confirmed-staff_a-cash-2026-01-05",
+          date: "2026-01-05",
+          cash: "140",
+          transfer: "",
+          approvedAt
+        },
+        {
+          id: "confirmed-staff_a-prior-period-cash-2026-01-12",
+          date: "2026-01-12",
+          cash: "110",
+          transfer: "",
+          approvedAt
+        },
+        {
+          id: "confirmed-staff_a-sunday-cash-2026-01-12",
+          date: "2026-01-12",
+          cash: "210",
+          transfer: "",
+          approvedAt
+        }
+      ];
+      const payroll = normalizePayroll(schedule.payroll?.staff_a);
+      const hasExpectedPayments = expectedPayments.every((expected) => (
+        payroll.payments.some((payment) => (
+          payment.id === expected.id &&
+          payment.date === expected.date &&
+          numberValue(payment.cash) === numberValue(expected.cash)
+        ))
+      ));
+      if (state.staff_aPriorPeriodPayment20260121v2 && hasExpectedPayments) return false;
+
+      setPayrollPayments(schedule, "staff_a", "2026-01-12", expectedPayments);
+
+      state.staff_aPriorPeriodPayment20260121v1 = true;
+      state.staff_aPriorPeriodPayment20260121v2 = true;
+      saveState();
+      return true;
+    }
+
+    function repairPreviousWeekOwnerPayments20260121() {
+      const schedule = scheduleForWeek("2026-01-05");
+      const approvedAt = "Owner previous-week payment repair 111/1/26";
+      const expectedPayments = [
+        { id: "confirmed-owner-cash-2026-01-05", date: "2026-01-05", cash: "60", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-06", date: "2026-01-06", cash: "170", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-07", date: "2026-01-07", cash: "220", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-09", date: "2026-01-09", cash: "200", transfer: "", approvedAt },
+        { id: "confirmed-owner-cash-2026-01-11", date: "2026-01-11", cash: "120", transfer: "", approvedAt },
+        { id: "confirmed-owner-prev-week-settlement-2026-01-11", date: "2026-01-11", cash: "450", transfer: "", approvedAt }
+      ];
+      const payroll = normalizePayroll(schedule.payroll?.owner);
+      const hasExpectedPayments = expectedPayments.every((expected) => (
+        payroll.payments.some((payment) => (
+          payment.id === expected.id &&
+          payment.date === expected.date &&
+          numberValue(payment.cash) === numberValue(expected.cash)
+        ))
+      ));
+      if (state.ownerPreviousWeekPaymentsRepair20260121v1 && hasExpectedPayments) return false;
+
+      setPayrollPayments(schedule, "owner", "2026-01-11", expectedPayments);
+      state.ownerPreviousWeekPaymentsRepair20260121v1 = true;
+      saveState();
+      return true;
+    }
+
+    function repairPreviousWeekRosterActuals20260121() {
+      const schedule = scheduleForWeek("2026-01-05");
+      const approvedAt = "Protected previous-week roster repair 111/1/26";
+      const protectedRoster = {
+        "2026-01-05": [
+          approvedShift("owner", "07:30", "10:30", approvedAt),
+          approvedShift("staff_a", "10:30", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-06": [
+          approvedShift("owner", "09:00", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-07": [
+          approvedShift("owner", "07:30", "18:30", approvedAt),
+          approvedShift("staff_a", "18:30", closeTime, approvedAt)
+        ],
+        "2026-01-08": [
+          approvedShift("owner", "07:30", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-09": [
+          approvedShift("owner", "07:30", "17:30", approvedAt),
+          approvedShift("staff_b", "17:30", closeTime, approvedAt)
+        ],
+        "2026-01-10": [
+          approvedShift("owner", "07:30", "10:00", approvedAt),
+          plannedShift("", "10:00", "11:00"),
+          approvedShift("owner", "11:00", "21:00", approvedAt),
+          approvedShift("staff_b", "21:00", closeTime, approvedAt)
+        ],
+        "2026-01-11": [
+          approvedShift("owner", "07:30", "10:30", approvedAt),
+          approvedShift("staff_a", "10:30", "21:00", approvedAt),
+          approvedShift("owner", "21:00", closeTime, approvedAt)
+        ]
+      };
+
+      const rowMatches = (actual, expected) => (
+        actual?.staffId === expected.staffId &&
+        actual?.start === expected.start &&
+        actual?.end === expected.end &&
+        actual?.actualStart === expected.actualStart &&
+        actual?.actualEnd === expected.actualEnd &&
+        actual?.actualApproved === expected.actualApproved
+      );
+      const needsRepair = Object.entries(protectedRoster).some(([date, expectedEntries]) => {
+        const actualEntries = schedule.roster?.[date] || [];
+        return actualEntries.length !== expectedEntries.length ||
+          expectedEntries.some((expected, index) => !rowMatches(actualEntries[index], expected)) ||
+          !schedule.approvedDays?.[date];
+      });
+
+      if (!needsRepair) return false;
+
+      snapshotSchedule("protected previous-week roster repair 2026-01-05");
+      schedule.roster = {
+        ...(schedule.roster || {}),
+        ...protectedRoster
+      };
+      schedule.approvedDays = {
+        ...(schedule.approvedDays || {}),
+        "2026-01-05": schedule.approvedDays?.["2026-01-05"] || approvedAt,
+        "2026-01-06": schedule.approvedDays?.["2026-01-06"] || approvedAt,
+        "2026-01-07": schedule.approvedDays?.["2026-01-07"] || approvedAt,
+        "2026-01-08": schedule.approvedDays?.["2026-01-08"] || approvedAt,
+        "2026-01-09": schedule.approvedDays?.["2026-01-09"] || approvedAt,
+        "2026-01-11": schedule.approvedDays?.["2026-01-11"] || approvedAt
+      };
+      schedule.approved = false;
+      schedule.approvedAt = "";
+      schedule.rosterSignature = rosterStructureSignature(schedule, "2026-01-05");
+      schedule.rosterNeedsRefresh = false;
+      schedule.rosterNeedsRefreshSignature = "";
+      state.previousWeekRosterActualsRepair20260121v1 = true;
+      saveState();
+      return true;
+    }
+
+    function renderPayroll() {
+      const schedule = currentSchedule();
+      if (!schedule.payroll) schedule.payroll = {};
+      const totals = staffHours();
+      payrollGridEl.innerHTML = "";
+
+      state.staff.forEach((person) => {
+        const payroll = normalizePayroll(schedule.payroll[person.id]);
+        schedule.payroll[person.id] = payroll;
+
+        const hours = totals[person.id] || 0;
+        const rate = Number.parseFloat(person.rate || "0") || 0;
+        const earned = hours * rate;
+        const draftCashPaid = numberValue(payroll.cashPaid);
+        const draftTransferPaid = numberValue(payroll.transferPaid);
+        const ledgerTotals = ledgerPaymentTotalsForStaffWeek(person.id, selectedWeekStart());
+        const approvedCashPaid = ledgerTotals.cash;
+        const approvedTransferPaid = ledgerTotals.transfer;
+        const approvedPaid = approvedCashPaid + approvedTransferPaid;
+        const draftPaid = draftCashPaid + draftTransferPaid;
+        const toPay = Math.max(0, earned - approvedPaid);
+        const draftRemaining = Math.max(0, earned - approvedPaid - draftPaid);
+
+        const row = document.createElement("div");
+        row.className = "payroll-row";
+
+        const name = document.createElement("div");
+        name.className = "payroll-value";
+        name.innerHTML = `${person.name}<span>${hours.toFixed(2)} hours</span>`;
+
+        const rateValue = document.createElement("div");
+        rateValue.className = "payroll-value";
+        rateValue.innerHTML = `${money(rate)}<span>rate</span>`;
+
+        const earnedValue = document.createElement("div");
+        earnedValue.className = "payroll-value earned";
+        earnedValue.innerHTML = `${money(earned)}<span>earned</span>`;
+
+        const toPayValue = document.createElement("div");
+        toPayValue.className = "payroll-value";
+        if (toPay > 0) toPayValue.classList.add("unpaid");
+        toPayValue.innerHTML = `${money(toPay)}<span>to pay</span>`;
+
+        const cashLabel = document.createElement("label");
+        cashLabel.textContent = "Cash paid";
+        const cashInput = document.createElement("input");
+        cashInput.type = "text";
+        cashInput.min = "0";
+        cashInput.step = "0.01";
+        cashInput.inputMode = "decimal";
+        cashInput.value = payroll.cashPaid || "";
+        cashLabel.append(cashInput);
+
+        const transferLabel = document.createElement("label");
+        transferLabel.textContent = "Transfer paid";
+        const transferInput = document.createElement("input");
+        transferInput.type = "text";
+        transferInput.min = "0";
+        transferInput.step = "0.01";
+        transferInput.inputMode = "decimal";
+        transferInput.value = payroll.transferPaid || "";
+        transferLabel.append(transferInput);
+
+        const paymentDateLabel = document.createElement("label");
+        paymentDateLabel.textContent = "Payment date";
+        const paymentDateInput = document.createElement("input");
+        paymentDateInput.type = "date";
+        paymentDateInput.value = payroll.draftPaymentDate || "";
+        paymentDateLabel.append(paymentDateInput);
+
+        const remainingValue = document.createElement("div");
+        remainingValue.className = "payroll-value";
+        if (draftRemaining > 0) remainingValue.classList.add("unpaid");
+        remainingValue.innerHTML = `${money(draftRemaining)}<span>left if approved</span>`;
+
+        const paymentButton = document.createElement("button");
+        paymentButton.type = "button";
+        paymentButton.className = "mini-button";
+        paymentButton.textContent = "Approve payment";
+        paymentButton.title = payroll.paymentApproved
+          ? `Last approved ${payroll.paymentApprovedAt}`
+          : "Confirm this cash/transfer payment into history";
+
+        const saveDraftPayment = () => {
+          payroll.cashPaid = cashInput.value;
+          payroll.transferPaid = transferInput.value;
+          payroll.draftPaymentDate = paymentDateInput.value || "";
+          payroll.draftUpdatedAt = new Date().toISOString();
+          saveState();
+        };
+
+        const updatePaymentControls = () => {
+          const currentDraftCash = numberValue(cashInput.value);
+          const currentDraftTransfer = numberValue(transferInput.value);
+          const currentDraftPaid = currentDraftCash + currentDraftTransfer;
+          const currentDraftRemaining = Math.max(0, earned - approvedPaid - currentDraftPaid);
+
+          remainingValue.classList.toggle("unpaid", currentDraftRemaining > 0);
+          remainingValue.innerHTML = `${money(currentDraftRemaining)}<span>left if approved</span>`;
+          paymentButton.disabled = currentDraftPaid <= 0 || toPay <= 0;
+        };
+
+        [cashInput, transferInput, paymentDateInput].forEach((input) => {
+          input.addEventListener("input", () => {
+            saveDraftPayment();
+            updatePaymentControls();
+          });
+          input.addEventListener("change", () => {
+            saveDraftPayment();
+            updatePaymentControls();
+          });
+        });
+
+        paymentButton.addEventListener("click", () => {
+          saveDraftPayment();
+          const paymentCash = numberValue(cashInput.value);
+          const paymentTransfer = numberValue(transferInput.value);
+          if (paymentCash + paymentTransfer <= 0) {
+            updatePaymentControls();
+            return;
+          }
+          if (!paymentDateInput.value) {
+            showStatus("Choose payment date before approving payment.", { toast: true });
+            paymentDateInput.focus();
+            return;
+          }
+          const paidOn = paymentDateInput.value;
+          const approvedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+          if (paymentCash > 0) {
+            const id = `pay_${Date.now()}_${person.id}_cash`;
+            upsertLedgerPayment({
+              id,
+              staffId: person.id,
+              amount: paymentCash,
+              paidOn,
+              allocation: [{ forWeekStart: selectedWeekStart(), amount: paymentCash }],
+              method: "cash",
+              cashMovementId: `cm_${id}`,
+              sourceRef: "payroll-screen:approve",
+              note: ""
+            });
+            upsertCashMovement({
+              id: `cm_${id}`,
+              date: paidOn,
+              type: "staff_payout",
+              amount: paymentCash,
+              direction: "out",
+              note: `Payout to ${person.id}`,
+              sourceRef: "payroll-screen:approve"
+            });
+          }
+          if (paymentTransfer > 0) {
+            upsertLedgerPayment({
+              id: `pay_${Date.now()}_${person.id}_transfer`,
+              staffId: person.id,
+              amount: paymentTransfer,
+              paidOn,
+              allocation: [{ forWeekStart: selectedWeekStart(), amount: paymentTransfer }],
+              method: "transfer",
+              cashMovementId: "",
+              sourceRef: "payroll-screen:approve",
+              note: ""
+            });
+          }
+          payroll.cashPaid = "";
+          payroll.transferPaid = "";
+          payroll.paymentDate = paymentDateInput.value;
+          payroll.draftPaymentDate = "";
+          payroll.draftUpdatedAt = "";
+          payroll.paymentApproved = true;
+          payroll.paymentApprovedAt = approvedAt;
+          const confirmedPaid = paymentCash + paymentTransfer;
+          saveState();
+          renderPayroll();
+          renderCashflow();
+          renderHistory();
+          renderSummary();
+          renderAudit();
+          showStatus(`${person.name} payment approved: ${money(confirmedPaid)}.`, { toast: true });
+        });
+
+        updatePaymentControls();
+
+        row.append(name, rateValue, earnedValue, toPayValue, cashLabel, transferLabel, remainingValue, paymentDateLabel, paymentButton);
+        payrollGridEl.append(row);
+      });
+    }
+
+    function staffPeriodTotals(schedule, dates = null) {
+      const dateSet = dates ? new Set(dates) : null;
+      const hoursByStaff = {};
+      Object.entries(schedule.roster || {}).forEach(([date, entries]) => {
+        if (dateSet && !dateSet.has(date)) return;
+        entries.forEach((entry) => {
+          if (!entry.staffId) return;
+          if (!entry.actualApproved) return;
+          hoursByStaff[entry.staffId] = (hoursByStaff[entry.staffId] || 0) + effectiveShiftHours(entry);
+        });
+      });
+
+      return state.staff.map((person) => {
+        const firstDate = dates?.[0] || Object.keys(schedule.roster || {}).sort()[0] || selectedWeekStart();
+        const weekStart = isoDate(mondayOf(new Date(`${firstDate}T00:00:00`)));
+        const hours = hoursByStaff[person.id] || 0;
+        const rate = Number.parseFloat(person.rate || "0") || 0;
+        const payroll = normalizePayroll(schedule.payroll?.[person.id]);
+        const hasSelectedApprovedHours = hours > 0;
+        const ledgerTotals = hasSelectedApprovedHours ? ledgerPaymentTotalsForStaffWeek(person.id, weekStart) : { cash: 0, transfer: 0, paid: 0, payments: [] };
+        const paymentTotals = { cash: ledgerTotals.cash, transfer: ledgerTotals.transfer };
+        const cashPaid = paymentTotals.cash;
+        const transferPaid = paymentTotals.transfer;
+        const draftCashPaid = numberValue(payroll.cashPaid);
+        const draftTransferPaid = numberValue(payroll.transferPaid);
+        const earned = hours * rate;
+        const confirmedPaid = cashPaid + transferPaid;
+
+        return {
+          person,
+          hours,
+          earned,
+          cashPaid,
+          transferPaid,
+          paid: confirmedPaid,
+          draftCashPaid,
+          draftTransferPaid,
+          draftPaid: draftCashPaid + draftTransferPaid,
+          left: Math.max(0, earned - confirmedPaid),
+          paymentApproved: confirmedPaid > 0,
+          paymentApprovedAt: paymentSummaryFromLedger(ledgerTotals.payments),
+          paymentSummary: paymentSummaryFromLedger(ledgerTotals.payments)
+        };
+      });
+    }
+
+    function scheduleTotals(schedule) {
+      const staffTotals = staffPeriodTotals(schedule);
+      let hours = 0;
+      let earned = 0;
+      let paid = 0;
+
+      staffTotals.forEach((total) => {
+        hours += total.hours;
+        earned += total.earned;
+        paid += total.paid;
+      });
+
+      return {
+        hours,
+        earned,
+        paid,
+        left: Math.max(0, earned - paid)
+      };
+    }
+
+    function syncReportPeriodControls() {
+      if (!reportFromInputEl || !reportToInputEl) return;
+      const fallbackDates = weekDates();
+      reportFromInputEl.value = state.reportFrom || fallbackDates[0];
+      reportToInputEl.value = state.reportTo || fallbackDates[6];
+      const { from, to } = reportRange();
+      reportPeriodLabelEl.textContent = `${niceDate(from)} - ${niceDate(to)}`;
+    }
+
+    function setReportPeriod(from, to) {
+      state.reportFrom = from;
+      state.reportTo = to;
+      saveState();
+      syncReportPeriodControls();
+      renderHistory();
+      renderSummary();
+      renderAudit();
+    }
+
+    function renderHistory() {
+      syncReportPeriodControls();
+      historyGridEl.innerHTML = "";
+      const { from, to } = reportRange();
+
+      const rows = Object.entries(state.schedules || {})
+        .map(([key, schedule]) => ({ key, schedule, parts: scheduleKeyParts(key) }))
+        .filter((row) => row.parts)
+        .sort((a, b) => a.parts.weekStart.localeCompare(b.parts.weekStart) || a.parts.locationId.localeCompare(b.parts.locationId));
+
+      if (rows.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "hint";
+        empty.textContent = "No saved periods yet.";
+        historyGridEl.append(empty);
+        return;
+      }
+
+      let renderedRows = 0;
+      rows.forEach(({ schedule, parts }) => {
+        const location = state.locations.find((item) => item.id === parts.locationId);
+        const dates = weekRangeDates(parts.weekStart).filter((date) => date >= from && date <= to);
+        if (dates.length === 0) return;
+        const staffTotals = staffPeriodTotals(schedule, dates)
+          .filter((total) => total.hours > 0 || total.earned > 0 || total.draftPaid > 0 || total.paid > 0);
+
+        if (staffTotals.length === 0) {
+          const emptyRow = document.createElement("div");
+          emptyRow.className = "history-row";
+
+          const period = document.createElement("div");
+          period.className = "payroll-value";
+          period.innerHTML = `${location?.name || parts.locationId}<span>${niceDate(dates[0])} - ${niceDate(dates[dates.length - 1])}</span>`;
+
+          const staff = document.createElement("div");
+          staff.className = "payroll-value";
+          staff.innerHTML = `No payroll yet<span>staff</span>`;
+
+          const hours = document.createElement("div");
+          hours.className = "payroll-value";
+          hours.innerHTML = `0.00<span>hours</span>`;
+
+          const earned = document.createElement("div");
+          earned.className = "payroll-value earned";
+          earned.innerHTML = `${money(0)}<span>earned</span>`;
+
+          const paid = document.createElement("div");
+          paid.className = "payroll-value";
+          paid.innerHTML = `${money(0)}<span>cash</span>`;
+
+          const transfer = document.createElement("div");
+          transfer.className = "payroll-value";
+          transfer.innerHTML = `${money(0)}<span>transfer</span>`;
+
+          const left = document.createElement("div");
+          left.className = "payroll-value";
+          left.innerHTML = `${money(0)}<span>to pay</span>`;
+
+          emptyRow.append(period, staff, hours, earned, paid, transfer, left);
+          historyGridEl.append(emptyRow);
+          renderedRows += 1;
+          return;
+        }
+
+        staffTotals.forEach((total) => {
+          const row = document.createElement("div");
+          row.className = "history-row";
+
+          const period = document.createElement("div");
+          period.className = "payroll-value";
+          period.innerHTML = `${location?.name || parts.locationId}<span>${niceDate(dates[0])} - ${niceDate(dates[dates.length - 1])}</span>`;
+
+          const staff = document.createElement("div");
+          staff.className = "payroll-value";
+          staff.innerHTML = `${total.person.name}<span>${total.paymentApproved ? total.paymentSummary : "payment not approved"}</span>`;
+
+          const hours = document.createElement("div");
+          hours.className = "payroll-value";
+          hours.innerHTML = `${total.hours.toFixed(2)}<span>hours</span>`;
+
+          const earned = document.createElement("div");
+          earned.className = "payroll-value earned";
+          earned.innerHTML = `${money(total.earned)}<span>earned</span>`;
+
+          const cash = document.createElement("div");
+          cash.className = "payroll-value";
+          cash.innerHTML = `${money(total.cashPaid)}<span>${total.paymentApproved ? "cash" : `${money(total.draftCashPaid)} draft`}</span>`;
+
+          const transfer = document.createElement("div");
+          transfer.className = "payroll-value";
+          transfer.innerHTML = `${money(total.transferPaid)}<span>${total.paymentApproved ? "transfer" : `${money(total.draftTransferPaid)} draft`}</span>`;
+
+          const left = document.createElement("div");
+          left.className = "payroll-value";
+          if (total.left > 0) left.classList.add("unpaid");
+          left.innerHTML = `${money(total.left)}<span>to pay</span>`;
+
+          row.append(period, staff, hours, earned, cash, transfer, left);
+          historyGridEl.append(row);
+          renderedRows += 1;
+        });
+      });
+
+      if (renderedRows === 0) {
+        const empty = document.createElement("div");
+        empty.className = "hint";
+        empty.textContent = "No saved records for this period.";
+        historyGridEl.append(empty);
+      }
+    }
+
+    function historyText() {
+      const { from, to } = reportRange();
+      const lines = ["Period history", "Location,Week,Staff,Hours,Earned,Cash paid,Transfer paid,To pay,Payment status"];
+      Object.entries(state.schedules || {})
+        .map(([key, schedule]) => ({ schedule, parts: scheduleKeyParts(key) }))
+        .filter((row) => row.parts)
+        .sort((a, b) => a.parts.weekStart.localeCompare(b.parts.weekStart) || a.parts.locationId.localeCompare(b.parts.locationId))
+        .forEach(({ schedule, parts }) => {
+          const location = state.locations.find((item) => item.id === parts.locationId);
+          const dates = weekRangeDates(parts.weekStart).filter((date) => date >= from && date <= to);
+          if (dates.length === 0) return;
+          staffPeriodTotals(schedule, dates)
+            .filter((total) => total.hours > 0 || total.earned > 0 || total.draftPaid > 0 || total.paid > 0)
+            .forEach((total) => {
+              lines.push([
+                location?.name || parts.locationId,
+                `${niceDate(dates[0])} - ${niceDate(dates[dates.length - 1])}`,
+                total.person.name,
+                total.hours.toFixed(2),
+                money(total.earned),
+                money(total.cashPaid),
+                money(total.transferPaid),
+                money(total.left),
+                total.paymentApproved ? total.paymentSummary : `Not approved (${money(total.draftCashPaid)} cash draft, ${money(total.draftTransferPaid)} transfer draft)`
+              ].join(","));
+            });
+        });
+      return lines.join("\n");
+    }
+
+    function auditStaffName(staffId) {
+      if (!staffId) return "Unassigned";
+      return state.staff.find((person) => person.id === staffId)?.name || LedgerModel.staffRates[staffId]?.name || staffId;
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "");
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+
+    function auditRows() {
+      const { from, to } = reportRange();
+      const source = ledger();
+      const rows = [];
+      const weeks = [...new Set(datesBetween(from, to).map((date) => isoDate(mondayOf(new Date(`${date}T00:00:00`)))))].sort();
+
+      weeks.forEach((weekStart) => {
+        LedgerModel.payrollSummary(source, LedgerModel.staffRates, weekStart)
+          .filter((row) => row.hours > 0 || row.earned > 0 || row.paid > 0 || row.toPay > 0)
+          .forEach((row) => {
+            rows.push({
+              type: "Payroll",
+              primary: `${auditStaffName(row.staffId)} | ${niceDate(weekStart)} - ${niceDate(isoDate(addDays(new Date(`${weekStart}T00:00:00`), 6)))}`,
+              detail: `${row.hours.toFixed(2)} approved hours, earned ${money(row.earned)}, paid ${money(row.paid)}`,
+              amount: money(row.toPay),
+              status: row.toPay > 0 ? "to pay" : "closed"
+            });
+          });
+      });
+
+      (source.shifts || [])
+        .filter((shift) => shift.date >= from && shift.date <= to)
+        .sort((a, b) => a.date.localeCompare(b.date) || (a.plannedStart || "").localeCompare(b.plannedStart || ""))
+        .forEach((shift) => {
+          rows.push({
+            type: "Shift",
+            primary: `${niceDate(shift.date)} | ${auditStaffName(shift.staffId)}`,
+            detail: `${displayTime(shift.actualStart || shift.plannedStart)}-${displayTime(shift.actualEnd || shift.plannedEnd)} (${numberValue(shift.hours).toFixed(2)}h)`,
+            amount: shift.status || "draft",
+            status: shift.sourceRef || ""
+          });
+        });
+
+      (source.payments || [])
+        .filter((payment) => {
+          const paidInRange = payment.paidOn >= from && payment.paidOn <= to;
+          const allocatedInRange = (payment.allocation || []).some((allocation) => allocation.forWeekStart >= from && allocation.forWeekStart <= to);
+          return paidInRange || allocatedInRange;
+        })
+        .sort((a, b) => a.paidOn.localeCompare(b.paidOn) || a.staffId.localeCompare(b.staffId))
+        .forEach((payment) => {
+          const allocation = (payment.allocation || [])
+            .map((item) => `${niceDate(item.forWeekStart)} ${money(item.amount)}`)
+            .join("; ");
+          rows.push({
+            type: "Payment",
+            primary: `${niceDate(payment.paidOn)} | ${auditStaffName(payment.staffId)}`,
+            detail: allocation || payment.note || "unallocated payment",
+            amount: money(payment.amount),
+            status: `${payment.method || "cash"} ${payment.sourceRef || ""}`.trim()
+          });
+        });
+
+      (source.cashMovements || [])
+        .filter((movement) => movement.date >= from && movement.date <= to)
+        .sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type))
+        .forEach((movement) => {
+          rows.push({
+            type: "Cash",
+            primary: `${niceDate(movement.date)} | ${movement.type}`,
+            detail: movement.note || movement.sourceRef || "",
+            amount: money(movement.amount),
+            status: movement.direction || "snapshot"
+          });
+        });
+
+      (source.terminalReports || [])
+        .filter((report) => (report.forDate >= from && report.forDate <= to) || (report.reportedOn >= from && report.reportedOn <= to))
+        .sort((a, b) => a.forDate.localeCompare(b.forDate))
+        .forEach((report) => {
+          rows.push({
+            type: "Terminal",
+            primary: `${niceDate(report.forDate)} | reported ${niceDate(report.reportedOn)}`,
+            detail: `${report.kind}${report.evidence ? `, evidence: ${report.evidence}` : ""}`,
+            amount: money(report.amount),
+            status: report.sourceRef || ""
+          });
+        });
+
+      (state.repairs || [])
+        .filter((repair) => repair.appliedAt)
+        .forEach((repair) => {
+          rows.push({
+            type: "Repair",
+            primary: repair.id || repair.guardFlag || "repair",
+            detail: repair.description || "protected migration/repair",
+            amount: repair.guardFlag || "",
+            status: repair.appliedAt
+          });
+        });
+
+      return rows;
+    }
+
+    function renderAudit() {
+      if (!auditGridEl) return;
+      syncReportPeriodControls();
+      auditGridEl.innerHTML = "";
+      const rows = auditRows();
+      if (rows.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "hint";
+        empty.textContent = "No ledger records for this period.";
+        auditGridEl.append(empty);
+        return;
+      }
+
+      rows.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "audit-row";
+        [item.type, item.primary, item.detail, item.amount, item.status].forEach((value, index) => {
+          const cell = document.createElement("div");
+          cell.className = index === 3 && String(value).startsWith("$") ? "payroll-value earned" : "payroll-value";
+          cell.innerHTML = `${value || "-"}<span>${["type", "record", "detail", "amount", "status"][index]}</span>`;
+          row.append(cell);
+        });
+        auditGridEl.append(row);
+      });
+    }
+
+    function auditText() {
+      return [
+        "Audit ledger",
+        "Type,Record,Detail,Amount,Status",
+        ...auditRows().map((row) => [row.type, row.primary, row.detail, row.amount, row.status].map(csvCell).join(","))
+      ].join("\n");
+    }
+
+    function renderSummary() {
+      if (!summaryGridEl) return;
+      summaryGridEl.innerHTML = "";
+      const { from, to } = reportRange();
+      const reportDates = datesBetween(from, to);
+
+      const weeklyMoney = reportDates.reduce((groups, date) => {
+        const weekStart = isoDate(mondayOf(new Date(`${date}T00:00:00`)));
+        if (!groups[weekStart]) {
+          groups[weekStart] = {
+            dates: [],
+            cashSales: 0,
+            terminal: 0,
+            staffCashPaid: 0,
+            dailyTotal: 0
+          };
+        }
+        const schedule = scheduleForDate(date);
+        const day = cashflowDayView(date, schedule);
+        const totals = cashflowTotalsForDay(day, date, schedule);
+        groups[weekStart].dates.push(date);
+        groups[weekStart].cashSales += totals.cashSales;
+        groups[weekStart].terminal += totals.terminal;
+        groups[weekStart].staffCashPaid += totals.staffCashPaid;
+        groups[weekStart].dailyTotal += totals.cashSales + totals.terminal;
+        return groups;
+      }, {});
+
+      Object.entries(weeklyMoney).forEach(([weekStart, totals]) => {
+        const weekEnd = isoDate(addDays(new Date(`${weekStart}T00:00:00`), 6));
+        const firstDate = totals.dates[0] || weekStart;
+        const lastDate = totals.dates[totals.dates.length - 1] || weekEnd;
+
+        const row = document.createElement("div");
+        row.className = "history-row summary-money-row";
+
+        const periodCell = document.createElement("div");
+        periodCell.className = "payroll-value";
+        periodCell.innerHTML = `${niceDate(weekStart)} - ${niceDate(weekEnd)}<span>${firstDate === weekStart && lastDate === weekEnd ? "full week" : `${niceDate(firstDate)} - ${niceDate(lastDate)}`}</span>`;
+
+        const cash = document.createElement("div");
+        cash.className = "payroll-value earned";
+        cash.innerHTML = `${money(totals.cashSales)}<span>cash</span>`;
+
+        const terminal = document.createElement("div");
+        terminal.className = "payroll-value";
+        terminal.innerHTML = `${money(totals.terminal)}<span>terminal</span>`;
+
+        const payroll = document.createElement("div");
+        payroll.className = "payroll-value";
+        payroll.innerHTML = `${money(totals.staffCashPaid)}<span>payroll</span>`;
+
+        const total = document.createElement("div");
+        total.className = "payroll-value";
+        total.innerHTML = `${money(totals.dailyTotal)}<span>week total</span>`;
+
+        row.append(periodCell, cash, terminal, payroll, total);
+        summaryGridEl.append(row);
+      });
+
+      const staffTotalsById = new Map(state.staff.map((person) => [person.id, {
+        person,
+        hours: 0,
+        earned: 0,
+        paid: 0,
+        left: 0
+      }]));
+      const datesByWeek = reportDates.reduce((groups, date) => {
+        const weekStart = isoDate(mondayOf(new Date(`${date}T00:00:00`)));
+        if (!groups[weekStart]) groups[weekStart] = [];
+        groups[weekStart].push(date);
+        return groups;
+      }, {});
+
+      Object.entries(datesByWeek).forEach(([weekStart, dates]) => {
+        const schedule = scheduleForWeek(weekStart);
+        staffPeriodTotals(schedule, dates).forEach((total) => {
+          const target = staffTotalsById.get(total.person.id);
+          if (!target) return;
+          target.hours += total.hours;
+          target.earned += total.earned;
+          target.paid += total.paid;
+          target.left += total.left;
+        });
+      });
+
+      [...staffTotalsById.values()].forEach((total) => {
+        if (total.hours <= 0 && total.earned <= 0 && total.paid <= 0 && total.left <= 0) return;
+        const row = document.createElement("div");
+        row.className = "history-row summary-staff-row";
+
+        const person = document.createElement("div");
+        person.className = "payroll-value";
+        person.innerHTML = `${total.person.name}<span>${total.hours.toFixed(2)} approved hours</span>`;
+
+        const earned = document.createElement("div");
+        earned.className = "payroll-value earned";
+        earned.innerHTML = `${money(total.earned)}<span>earned</span>`;
+
+        const paid = document.createElement("div");
+        paid.className = "payroll-value";
+        paid.innerHTML = `${money(total.paid)}<span>paid</span>`;
+
+        const left = document.createElement("div");
+        left.className = "payroll-value";
+        if (total.left > 0) left.classList.add("unpaid");
+        left.innerHTML = `${money(total.left)}<span>to pay</span>`;
+
+        row.append(person, earned, paid, left);
+        summaryGridEl.append(row);
+      });
+    }
+
+    function approveRoster() {
+      ensureRoster();
+      const schedule = currentSchedule();
+      const hasGap = Object.values(schedule.roster).some((entries) => entries.some((entry) => !entry.staffId));
+      const approvedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+      schedule.approvedDays = {};
+      weekDates().forEach((date) => {
+        schedule.approvedDays[date] = approvedAt;
+      });
+      schedule.approved = true;
+      schedule.approvedAt = approvedAt;
+      saveState();
+      renderRoster();
+      renderMessages();
+      showStatus(hasGap ? "Approved with gaps. Check unassigned shifts." : "Roster approved.");
+    }
+
+    async function copyText(text, message) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showStatus(message);
+      } catch {
+        showStatus("Copy blocked by browser. Select the text manually.");
+      }
+    }
+
+    function showStatus(message, options = {}) {
+      statusEl.textContent = message;
+      window.clearTimeout(showStatus.timer);
+      showStatus.timer = window.setTimeout(() => {
+        statusEl.textContent = "";
+      }, 2400);
+      if (options.toast) showToast(message);
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("is-visible");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => {
+        toastEl.classList.remove("is-visible");
+      }, 2200);
+    }
+
+    function renderAll() {
+      renderLocationSelect();
+      renderWeekSelect();
+      renderWeekLabel();
+      renderTodayScreen();
+      renderStaffGrid();
+      renderRoster();
+      renderCashflow();
+      renderMessages();
+      renderHistory();
+      renderSummary();
+      renderAudit();
+    }
+
+    document.addEventListener("beforeinput", (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || input.inputMode !== "decimal") return;
+      if (event.data !== "," && event.data !== ".") return;
+      event.preventDefault();
+      const start = input.selectionStart ?? input.value.length;
+      const end = input.selectionEnd ?? start;
+      input.value = `${input.value.slice(0, start)}.${input.value.slice(end)}`;
+      input.setSelectionRange(start + 1, start + 1);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    document.addEventListener("input", (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || input.inputMode !== "decimal") return;
+      if (!input.value.includes(",")) return;
+      const cursor = input.selectionStart ?? input.value.length;
+      input.value = input.value.replace(/,/g, ".");
+      input.setSelectionRange(Math.min(cursor, input.value.length), Math.min(cursor, input.value.length));
+    });
+
+    locationSelectEl.addEventListener("change", () => {
+      state.activeLocation = locationSelectEl.value;
+      saveState();
+      renderAll();
+      showStatus(`${currentLocation().name} selected.`);
+    });
+    weekSelectEl.addEventListener("change", () => {
+      state.activeWeekStart = weekSelectEl.value;
+      saveState();
+      renderAll();
+      showStatus("Week selected.");
+    });
+    draftButtonEl.addEventListener("click", autoDraft);
+    approveButtonEl.addEventListener("click", approveRoster);
+    copyRosterButtonEl.addEventListener("click", () => copyText(fullRosterText(), "Full roster copied."));
+    copyHistoryButtonEl.addEventListener("click", () => copyText(historyText(), "History copied."));
+    copyCashflowButtonEl.addEventListener("click", () => copyText(cashflowReportText(), "Cash report copied."));
+    copyAuditButtonEl.addEventListener("click", () => copyText(auditText(), "Audit copied."));
+    [reportFromInputEl, reportToInputEl].forEach((input) => {
+      input.addEventListener("change", () => {
+        const fallbackDates = weekDates();
+        setReportPeriod(reportFromInputEl.value || fallbackDates[0], reportToInputEl.value || fallbackDates[6]);
+      });
+    });
+    reportCurrentWeekButtonEl.addEventListener("click", () => {
+      const dates = weekDates();
+      setReportPeriod(dates[0], dates[6]);
+    });
+    reportAllDataButtonEl.addEventListener("click", () => {
+      const dates = savedScheduleDates();
+      if (dates.length === 0) {
+        const current = weekDates();
+        setReportPeriod(current[0], current[6]);
+        return;
+      }
+      setReportPeriod(dates[0], dates[dates.length - 1]);
+    });
+
+    todayDateInputEl.addEventListener("change", () => {
+      activeCashflowDate = todayDateInputEl.value;
+      renderAll();
+    });
+
+    function saveTodayCashField(field, value) {
+      const date = selectedTodayDate();
+      const schedule = scheduleForDate(date);
+      const day = cashflowDayForSchedule(schedule, date);
+      day[field] = value;
+      day.updatedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+      syncLedgerCashflowField(date, field, value, "today-screen");
+      if (field === "previousTerminal" && hasNumberInput(value)) {
+        const previousDate = isoDate(addDays(new Date(`${date}T00:00:00`), -1));
+        showStatus(`Previous terminal saved for ${niceDate(previousDate)}.`, { toast: true });
+      }
+      saveState();
+      const latest = todayLatestCash(date);
+      todayKnownCashEl.textContent = money(latest.amount);
+      todayCashSourceEl.textContent = latest.source === "pending" ? "no cash checkpoint yet" : `from ${latest.source.replace("_", " ")}`;
+      renderCashflowAnalytics();
+      renderSummary();
+      renderAudit();
+    }
+
+    todayOpeningCashInputEl.addEventListener("input", () => saveTodayCashField("openingCash", todayOpeningCashInputEl.value));
+    todayPreviousTerminalInputEl.addEventListener("input", () => saveTodayCashField("previousTerminal", todayPreviousTerminalInputEl.value));
+    todayMidCashInputEl.addEventListener("input", () => saveTodayCashField("midCash", todayMidCashInputEl.value));
+    todayMidTerminalInputEl.addEventListener("input", () => saveTodayCashField("midTerminal", todayMidTerminalInputEl.value));
+    todayClosingCashInputEl.addEventListener("input", () => saveTodayCashField("closingCash", todayClosingCashInputEl.value));
+    todayClosingTerminalInputEl.addEventListener("input", () => saveTodayCashField("closingTerminal", todayClosingTerminalInputEl.value));
+
+    todaySavePayoutButtonEl.addEventListener("click", () => {
+      const amount = numberValue(todayPayoutAmountEl.value);
+      if (amount <= 0 || !todayPayoutStaffEl.value || !todayPayoutPaidOnEl.value || !todayPayoutWeekEl.value) {
+        showStatus("Enter staff, amount, paid on date, and payroll week before saving payout.", { toast: true });
+        return;
+      }
+      const paidOn = todayPayoutPaidOnEl.value;
+      const staffId = todayPayoutStaffEl.value;
+      const id = `pay_${Date.now()}_${staffId}`;
+      const paymentRecord = {
+        id,
+        staffId,
+        amount,
+        paidOn,
+        allocation: [{ forWeekStart: todayPayoutWeekEl.value, amount }],
+        method: "cash",
+        cashMovementId: `cm_${id}`,
+        sourceRef: "today-screen:payout",
+        note: ""
+      };
+      upsertLedgerPayment(paymentRecord);
+      upsertCashMovement({
+        id: paymentRecord.cashMovementId,
+        date: paidOn,
+        type: "staff_payout",
+        amount,
+        direction: "out",
+        note: `Payout to ${staffId}`,
+        sourceRef: "today-screen:payout"
+      });
+      saveState();
+      todayPayoutAmountEl.value = "";
+      renderTodayScreen();
+      renderPayroll();
+      renderCashflow();
+      renderHistory();
+      renderSummary();
+      renderAudit();
+      showStatus("Payout saved to ledger.", { toast: true });
+    });
+
+    cashflowDateSelectEl.addEventListener("change", () => {
+      activeCashflowDate = cashflowDateSelectEl.value;
+      renderCashflow();
+    });
+
+    openingCashInputEl.addEventListener("input", () => saveCashflowField("openingCash", openingCashInputEl.value));
+    previousTerminalInputEl.addEventListener("input", () => saveCashflowField("previousTerminal", previousTerminalInputEl.value));
+    terminalCheckedInputEl.addEventListener("change", () => saveCashflowField("terminalChecked", terminalCheckedInputEl.checked));
+    midCashInputEl.addEventListener("input", () => saveCashflowField("midCash", midCashInputEl.value));
+    midTerminalInputEl.addEventListener("input", () => saveCashflowField("midTerminal", midTerminalInputEl.value));
+    closingCashInputEl.addEventListener("input", () => saveCashflowField("closingCash", closingCashInputEl.value));
+    closingTerminalInputEl.addEventListener("input", () => saveCashflowField("closingTerminal", closingTerminalInputEl.value));
+    staffCashPaidInputEl.addEventListener("input", () => saveCashflowField("staffCashPaid", staffCashPaidInputEl.value));
+    cashNotesInputEl.addEventListener("input", () => saveCashflowField("notes", cashNotesInputEl.value));
+    terminalPhotoInputEl.addEventListener("change", () => {
+      const file = terminalPhotoInputEl.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        const day = cashflowDay();
+        day.terminalPhoto = String(reader.result || "");
+        day.terminalPhotoName = file.name;
+        day.updatedAt = new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+        saveState();
+        renderCashflow();
+        showStatus("Terminal photo saved.");
+      });
+      reader.readAsDataURL(file);
+    });
+
+    if (ledgerModelMigratedOnLoad) saveState();
+    const legacyMigrationProtectionApplied = protectExistingDataFromLegacyMigrations();
+    const journalDataApplied = applyJournalData20260115();
+    const rosterCorrectionApplied = applyRosterCorrection20260115();
+    const financeLedgerApplied = applyFinanceLedger20260115();
+    const payrollActualsCorrectionApplied = applyPayrollActualsCorrection20260115();
+    const staff_aPayrollCorrectionApplied = applyStaffAPayrollCorrection20260115();
+    const ownerPayrollCorrectionApplied = applyOwnerPayrollCorrection20260115();
+    const confirmedFinanceImportApplied = applyConfirmedFinanceImport20260116();
+    const openingCash20260116Applied = applyOpeningCash20260116();
+    const cashflowPayroll20260116Applied = applyCashflowPayroll20260116();
+    const cashCorrection20260116Applied = applyCashCorrection20260116v2();
+    const staff_aPriorPeriodPaymentApplied = applyStaffAPriorPeriodPayment20260121();
+    const ownerPreviousWeekPaymentsRepairApplied = repairPreviousWeekOwnerPayments20260121();
+    const previousWeekRosterActualsRepairApplied = repairPreviousWeekRosterActuals20260121();
+    createMandatoryDailyBackup("startup daily check");
+    renderAll();
+    window.addEventListener("hashchange", applyRoute);
+    if (legacyMigrationProtectionApplied || journalDataApplied || rosterCorrectionApplied || financeLedgerApplied || payrollActualsCorrectionApplied || staff_aPayrollCorrectionApplied || ownerPayrollCorrectionApplied || confirmedFinanceImportApplied || openingCash20260116Applied || cashflowPayroll20260116Applied || cashCorrection20260116Applied || staff_aPriorPeriodPaymentApplied || ownerPreviousWeekPaymentsRepairApplied || previousWeekRosterActualsRepairApplied) {
+      showStatus("Journal data restored: shifts, approved hours, payments, and cash opening balance updated.", { toast: true });
+    }
+
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
+
+
+

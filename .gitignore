@@ -1,0 +1,11 @@
+backups/
+Screenshots/
+analysis_contact_sheets/
+claude_package*/
+*.zip
+*.log
+.DS_Store
+Thumbs.db
+.codex/
+.agents/
+

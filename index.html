@@ -1,0 +1,1092 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Retail Shift Cashflow Tracker</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f3ee;
+      --panel: #fffdf9;
+      --ink: #1d2521;
+      --muted: #66736d;
+      --line: #d8d0c5;
+      --accent: #0f766e;
+      --accent-dark: #0a5d57;
+      --warn: #9f4a11;
+      --soft: #e9f5f3;
+      --shadow: 0 16px 40px rgba(29, 37, 33, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 40px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 36px;
+      line-height: 1.05;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .top-actions,
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .compact-control {
+      min-width: 150px;
+    }
+
+    .top-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+    }
+
+    .top-control input {
+      height: 42px;
+      min-width: 150px;
+    }
+
+    a.button,
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    a.button:hover,
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    button.secondary,
+    a.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    button.secondary:hover,
+    a.secondary:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input {
+      min-height: 42px;
+      padding: 8px 10px;
+    }
+
+    textarea {
+      min-height: 144px;
+      padding: 12px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbf8f3;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .products {
+      display: grid;
+      gap: 0;
+    }
+
+    .product-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 112px 118px;
+      gap: 16px;
+      align-items: center;
+      min-height: 76px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #eee7dc;
+    }
+
+    .product-row:last-child {
+      border-bottom: 0;
+    }
+
+    .product-name {
+      font-weight: 700;
+      line-height: 1.25;
+      font-size: 18px;
+    }
+
+    .need {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 94px;
+      min-height: 44px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--accent-dark);
+      font-weight: 800;
+      font-size: 17px;
+    }
+
+    .need.zero {
+      background: #f1eee8;
+      color: var(--muted);
+    }
+
+    .need.warn {
+      background: #fff1df;
+      color: var(--warn);
+    }
+
+    .side-body {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .vape-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .vape-chip {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .vape-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent-dark);
+      background: var(--soft);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    button.secondary {
+      color: var(--ink);
+      background: #ece5da;
+    }
+
+    button.secondary:hover {
+      background: #ded4c6;
+    }
+
+    .message {
+      min-height: 330px;
+      white-space: pre-wrap;
+    }
+
+    .history-section {
+      grid-column: 1 / -1;
+    }
+
+    .dashboard-body {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.86fr) minmax(360px, 1.14fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .stat-list,
+    .history-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(80px, 34%) 72px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #ebe5dc;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .history-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+    }
+
+    .history-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .history-card ul {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.4;
+    }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .toast {
+      min-height: 20px;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 860px) {
+      header,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: stretch;
+      }
+
+      .filters,
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(100% - 20px, 1220px);
+        padding-top: 16px;
+      }
+
+      h1 {
+        white-space: normal;
+      }
+
+      .top-actions,
+      .summary,
+      .filters,
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .product-row {
+        grid-template-columns: 1fr 94px;
+      }
+
+      .product-row label {
+        grid-column: 1 / 2;
+      }
+
+      .need {
+        grid-column: 2 / 3;
+        grid-row: 1 / 3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Order Helper</h1>
+        <p class="subtitle">Enter current product units. The order is calculated up to the target stock.</p>
+      </div>
+      <div class="top-actions">
+        <a class="button secondary" href="./manager.html#/day">Day</a>
+        <a class="button secondary" href="./index.html">Order helper</a>
+        <a class="button secondary" href="./staff.html">Staff page</a>
+        <a class="button secondary" href="./manager.html#/roster">Roster</a>
+        <a class="button secondary" href="./manager.html#/payroll">Payroll</a>
+        <a class="button secondary" href="./manager.html#/cashflow">Cash flow</a>
+        <a class="button secondary" href="./manager.html#/summary">Summary</a>
+        <label class="compact-control top-control">
+          Target units
+          <input id="targetStock" type="number" min="0" step="1" value="5">
+        </label>
+        <label class="compact-control top-control">
+          Supplier Messenger number
+          <input id="phoneNumber" type="tel" placeholder="+61..." value="+15550101010">
+        </label>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section>
+        <div class="section-head">
+          <h2>Products</h2>
+          <span class="hint">Current stock in units</span>
+        </div>
+        <div id="products" class="products"></div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>Messenger Message</h2>
+          <span class="hint" id="orderHint">Ready</span>
+        </div>
+        <div class="side-body">
+          <div class="summary">
+            <div class="metric">
+              <strong id="itemsCount">0</strong>
+              <span>items to order</span>
+            </div>
+            <div class="metric">
+              <strong id="unitsCount">0</strong>
+              <span>units</span>
+            </div>
+            <div class="metric">
+              <strong id="knownCount">13</strong>
+              <span>products</span>
+            </div>
+          </div>
+
+          <label>
+            Accessories
+            <textarea id="accessoriesInput" placeholder="Sample Accessory A&#10;Sample Accessory B&#10;Sample Accessory C"></textarea>
+          </label>
+          <div>
+            <div class="hint" style="margin-bottom: 8px;">Tap an accessory to add it</div>
+            <div id="vapeOptions" class="vape-options"></div>
+          </div>
+
+          <label>
+            Message
+            <textarea id="messageOutput" class="message"></textarea>
+          </label>
+
+          <div class="actions">
+            <button id="copyButton" type="button">Copy</button>
+            <a id="whatsappButton" class="button" href="#" target="_blank" rel="noopener">Open Messenger</a>
+          </div>
+          <button id="clearButton" class="secondary" type="button">Clear current stock</button>
+          <div id="toast" class="toast" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="history-section">
+        <div class="section-head">
+          <h2>Stats & History</h2>
+          <span class="hint">Saved restock orders</span>
+        </div>
+        <div class="dashboard-body">
+          <div class="filters">
+            <label>
+              From
+              <input id="dateFrom" type="date">
+            </label>
+            <label>
+              To
+              <input id="dateTo" type="date">
+            </label>
+            <button id="exportButton" type="button">Export CSV</button>
+            <button id="clearHistoryButton" class="secondary" type="button">Clear history</button>
+          </div>
+
+          <div class="summary">
+            <div class="metric">
+              <strong id="periodOrders">0</strong>
+              <span>orders</span>
+            </div>
+            <div class="metric">
+              <strong id="periodUnits">0</strong>
+              <span>units ordered</span>
+            </div>
+            <div class="metric">
+              <strong id="periodTopItem">-</strong>
+              <span>top item</span>
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            <div>
+              <h2 style="margin-bottom: 10px;">Popularity</h2>
+              <div id="popularityList" class="stat-list"></div>
+            </div>
+            <div>
+              <h2 style="margin-bottom: 10px;">History</h2>
+              <div id="historyList" class="history-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const products = [
+      "Sample Product A",
+      "Sample Product B",
+      "Sample Product C",
+      "Sample Product D",
+      "Sample Product E",
+      "Sample Product F",
+      "Sample Product G",
+      "Sample Product H",
+      "Sample Product I",
+      "Sample Product J",
+      "Sample Product K",
+      "Sample Product L",
+      "Sample Product M"
+    ];
+
+    const vapeFlavours = [
+      "Sample Accessory A",
+      "Sample Accessory B",
+      "Sample Accessory C",
+      "Sample Accessory D",
+      "Sample Accessory E",
+      "Sample Accessory F",
+      "Sample Accessory G",
+      "Sample Accessory H",
+      "Sample Accessory I",
+      "Sample Accessory J",
+      "Sample Accessory K",
+      "Sample Accessory L",
+      "Sample Accessory M",
+      "Sample Accessory N",
+      "Sample Accessory O",
+      "Sample Accessory P"
+    ];
+
+    const stateKey = "retailOrderHelperPublicDemoV2";
+    const historyKey = "retailOrderHistoryPublicDemoV2";
+    const productsEl = document.getElementById("products");
+    const vapeOptionsEl = document.getElementById("vapeOptions");
+    const targetStockEl = document.getElementById("targetStock");
+    const phoneNumberEl = document.getElementById("phoneNumber");
+    const accessoriesInputEl = document.getElementById("accessoriesInput");
+    const messageOutputEl = document.getElementById("messageOutput");
+    const whatsappButtonEl = document.getElementById("whatsappButton");
+    const copyButtonEl = document.getElementById("copyButton");
+    const clearButtonEl = document.getElementById("clearButton");
+    const dateFromEl = document.getElementById("dateFrom");
+    const dateToEl = document.getElementById("dateTo");
+    const exportButtonEl = document.getElementById("exportButton");
+    const clearHistoryButtonEl = document.getElementById("clearHistoryButton");
+    const itemsCountEl = document.getElementById("itemsCount");
+    const unitsCountEl = document.getElementById("unitsCount");
+    const knownCountEl = document.getElementById("knownCount");
+    const periodOrdersEl = document.getElementById("periodOrders");
+    const periodUnitsEl = document.getElementById("periodUnits");
+    const periodTopItemEl = document.getElementById("periodTopItem");
+    const popularityListEl = document.getElementById("popularityList");
+    const historyListEl = document.getElementById("historyList");
+    const orderHintEl = document.getElementById("orderHint");
+    const toastEl = document.getElementById("toast");
+
+    knownCountEl.textContent = String(products.length);
+
+    function loadState() {
+      try {
+        return JSON.parse(localStorage.getItem(stateKey)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function loadHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(historyKey)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveHistory(history) {
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    }
+
+    function localDate(date = new Date()) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function addDays(date, days) {
+      const next = new Date(date);
+      next.setDate(next.getDate() + days);
+      return next;
+    }
+
+    function saveState() {
+      const counts = {};
+      document.querySelectorAll("[data-product]").forEach((input) => {
+        counts[input.dataset.product] = input.value;
+      });
+
+      localStorage.setItem(stateKey, JSON.stringify({
+        targetStock: targetStockEl.value,
+        phoneNumber: phoneNumberEl.value,
+        accessories: accessoriesInputEl.value,
+        counts
+      }));
+    }
+
+    function unitWord(count) {
+      return count === 1 ? "unit" : "units";
+    }
+
+    function cleanPhoneNumber(value) {
+      return value.replace(/[^\d]/g, "");
+    }
+
+    function updateMessengerLink(message) {
+      const phone = cleanPhoneNumber(phoneNumberEl.value);
+      const encodedMessage = encodeURIComponent(message);
+      whatsappButtonEl.href = phone
+        ? `https://wa.me/${phone}?text=${encodedMessage}`
+        : `https://wa.me/?text=${encodedMessage}`;
+    }
+
+    function getAccessories() {
+      return accessoriesInputEl.value
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    }
+
+    function buildRows(savedCounts) {
+      productsEl.innerHTML = "";
+
+      products.forEach((product) => {
+        const row = document.createElement("div");
+        row.className = "product-row";
+
+        const name = document.createElement("div");
+        name.className = "product-name";
+        name.textContent = product;
+
+        const label = document.createElement("label");
+        label.textContent = "Current";
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "0";
+        input.step = "1";
+        input.inputMode = "numeric";
+        input.dataset.product = product;
+        input.value = savedCounts?.[product] ?? "";
+        label.append(input);
+
+        const need = document.createElement("span");
+        need.className = "need zero";
+        need.dataset.need = product;
+        need.textContent = "0";
+
+        row.append(name, label, need);
+        productsEl.append(row);
+      });
+    }
+
+    function buildVapeOptions() {
+      vapeOptionsEl.innerHTML = "";
+
+      vapeFlavours.forEach((flavour) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "vape-chip";
+        button.textContent = flavour;
+        button.addEventListener("click", () => {
+          const current = accessoriesInputEl.value
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean);
+
+          if (!current.includes(flavour)) {
+            current.push(flavour);
+            accessoriesInputEl.value = current.join("\n");
+            buildMessage();
+          }
+        });
+        vapeOptionsEl.append(button);
+      });
+    }
+
+    function getOrderLines() {
+      const target = Math.max(0, Number.parseInt(targetStockEl.value || "0", 10));
+      const lines = [];
+      let totalUnits = 0;
+
+      document.querySelectorAll("[data-product]").forEach((input) => {
+        const product = input.dataset.product;
+        const raw = input.value.trim();
+        const current = raw === "" ? target : Math.max(0, Number.parseInt(raw, 10));
+        const need = Math.max(0, target - current);
+        const badge = document.querySelector(`[data-need="${CSS.escape(product)}"]`);
+
+        badge.textContent = String(need);
+        badge.classList.toggle("zero", need === 0);
+        badge.classList.toggle("warn", need >= target);
+
+        if (need > 0) {
+          lines.push({ product, need });
+          totalUnits += need;
+        }
+      });
+
+      return { lines, totalUnits };
+    }
+
+    function buildMessage() {
+      const { lines, totalUnits } = getOrderLines();
+      const accessories = getAccessories();
+
+      const parts = ["Hi, Supplier.", "", "We need:"];
+
+      if (lines.length > 0) {
+        parts.push("Products:");
+        lines.forEach((line, index) => {
+          parts.push(`${index + 1}. ${line.product} - ${line.need} ${unitWord(line.need)}`);
+        });
+      }
+
+      if (accessories.length > 0) {
+        if (lines.length > 0) parts.push("");
+        parts.push("Accessories:");
+        accessories.forEach((vape, index) => {
+          parts.push(`${index + 1}. ${vape}`);
+        });
+      }
+
+      if (lines.length === 0 && accessories.length === 0) {
+        parts.push("Nothing for now.");
+      }
+
+      const message = parts.join("\n");
+      messageOutputEl.value = message;
+      itemsCountEl.textContent = String(lines.length + accessories.length);
+      unitsCountEl.textContent = String(totalUnits);
+      orderHintEl.textContent = totalUnits > 0 || accessories.length > 0 ? "Order ready" : "No order";
+
+      updateMessengerLink(message);
+
+      saveState();
+    }
+
+    function currentOrderSnapshot() {
+      const { lines, totalUnits } = getOrderLines();
+      const accessories = getAccessories();
+
+      return {
+        lines,
+        totalUnits,
+        accessories,
+        message: messageOutputEl.value
+      };
+    }
+
+    function saveCurrentOrder() {
+      const snapshot = currentOrderSnapshot();
+
+      if (snapshot.lines.length === 0 && snapshot.accessories.length === 0) {
+        showToast("Nothing to save.");
+        return false;
+      }
+
+      const now = new Date();
+      const signature = JSON.stringify({
+        lines: snapshot.lines,
+        accessories: snapshot.accessories
+      });
+      const history = loadHistory();
+      const last = history[history.length - 1];
+
+      if (last && last.signature === signature && now - new Date(last.createdAt) < 10 * 60 * 1000) {
+        showToast("This order was already saved.");
+        return true;
+      }
+
+      history.push({
+        id: `${now.getTime()}-${Math.random().toString(16).slice(2)}`,
+        createdAt: now.toISOString(),
+        date: localDate(now),
+        products: snapshot.lines,
+        accessories: snapshot.accessories,
+        totalUnits: snapshot.totalUnits,
+        message: snapshot.message,
+        signature
+      });
+
+      saveHistory(history);
+      renderDashboard();
+      showToast("Order saved to history.");
+      return true;
+    }
+
+    function getFilteredHistory() {
+      const from = dateFromEl.value || "0000-01-01";
+      const to = dateToEl.value || "9999-12-31";
+
+      return loadHistory()
+        .filter((order) => order.date >= from && order.date <= to)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    }
+
+    function renderDashboard() {
+      const history = getFilteredHistory();
+      const totals = new Map();
+      let units = 0;
+
+      history.forEach((order) => {
+        units += order.totalUnits || 0;
+        (order.products || []).forEach((line) => {
+          totals.set(line.product, (totals.get(line.product) || 0) + line.need);
+        });
+      });
+
+      const ranked = Array.from(totals.entries())
+        .map(([product, count]) => ({ product, count }))
+        .sort((a, b) => b.count - a.count || a.product.localeCompare(b.product));
+      const maxCount = ranked[0]?.count || 1;
+
+      periodOrdersEl.textContent = String(history.length);
+      periodUnitsEl.textContent = String(units);
+      periodTopItemEl.textContent = ranked[0]?.product || "-";
+
+      popularityListEl.innerHTML = "";
+      if (ranked.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No saved product orders in this period.";
+        popularityListEl.append(empty);
+      } else {
+        ranked.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "stat-row";
+
+          const name = document.createElement("strong");
+          name.textContent = item.product;
+
+          const track = document.createElement("div");
+          track.className = "bar-track";
+          const bar = document.createElement("div");
+          bar.className = "bar";
+          bar.style.width = `${Math.round((item.count / maxCount) * 100)}%`;
+          track.append(bar);
+
+          const count = document.createElement("span");
+          count.textContent = `${item.count} ${unitWord(item.count)}`;
+
+          row.append(name, track, count);
+          popularityListEl.append(row);
+        });
+      }
+
+      historyListEl.innerHTML = "";
+      if (history.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No saved orders in this period.";
+        historyListEl.append(empty);
+      } else {
+        history.forEach((order) => {
+          const card = document.createElement("article");
+          card.className = "history-card";
+
+          const head = document.createElement("div");
+          head.className = "history-card-head";
+          const when = new Date(order.createdAt);
+          head.innerHTML = `<span>${when.toLocaleString()}</span><span>${order.totalUnits || 0} units</span>`;
+
+          const list = document.createElement("ul");
+          (order.products || []).forEach((line) => {
+            const item = document.createElement("li");
+            item.textContent = `${line.product} - ${line.need} ${unitWord(line.need)}`;
+            list.append(item);
+          });
+          (order.accessories || []).forEach((vape) => {
+            const item = document.createElement("li");
+            item.textContent = `Vape: ${vape}`;
+            list.append(item);
+          });
+
+          card.append(head, list);
+          historyListEl.append(card);
+        });
+      }
+    }
+
+    function exportCsv() {
+      const history = getFilteredHistory();
+      const rows = [["date", "time", "category", "item", "quantity", "unit"]];
+
+      history.slice().reverse().forEach((order) => {
+        const when = new Date(order.createdAt);
+        const time = when.toLocaleTimeString();
+        (order.products || []).forEach((line) => {
+          rows.push([order.date, time, "Products", line.product, line.need, unitWord(line.need)]);
+        });
+        (order.accessories || []).forEach((vape) => {
+          rows.push([order.date, time, "Accessories", vape, 1, "item"]);
+        });
+      });
+
+      const csv = rows
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `retail-order-history-${dateFromEl.value || "all"}-${dateToEl.value || "all"}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => {
+        toastEl.textContent = "";
+      }, 2200);
+    }
+
+    const saved = loadState();
+    const today = new Date();
+    targetStockEl.value = saved.targetStock || "5";
+    phoneNumberEl.value = saved.phoneNumber || "+15550101010";
+    accessoriesInputEl.value = saved.accessories || "";
+    dateFromEl.value = localDate(addDays(today, -6));
+    dateToEl.value = localDate(today);
+    buildRows(saved.counts);
+    buildVapeOptions();
+
+    document.addEventListener("input", (event) => {
+      if (event.target === dateFromEl || event.target === dateToEl) {
+        renderDashboard();
+      } else if (event.target === messageOutputEl) {
+        updateMessengerLink(messageOutputEl.value);
+        orderHintEl.textContent = "Edited message";
+      } else {
+        buildMessage();
+      }
+    });
+
+    document.getElementById("copyButton").insertAdjacentHTML("beforebegin", '<button id="saveButton" type="button">Save order</button>');
+    const saveButtonEl = document.getElementById("saveButton");
+
+    saveButtonEl.addEventListener("click", saveCurrentOrder);
+
+    whatsappButtonEl.addEventListener("click", () => {
+      saveCurrentOrder();
+    });
+
+    copyButtonEl.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(messageOutputEl.value);
+        showToast("Message copied.");
+      } catch {
+        messageOutputEl.focus();
+        messageOutputEl.select();
+        showToast("Message selected. Press Ctrl+C.");
+      }
+    });
+
+    clearButtonEl.addEventListener("click", () => {
+      document.querySelectorAll("[data-product]").forEach((input) => {
+        input.value = "";
+      });
+      buildMessage();
+      showToast("Current stock cleared.");
+    });
+
+    exportButtonEl.addEventListener("click", exportCsv);
+
+    clearHistoryButtonEl.addEventListener("click", () => {
+      if (!confirm("Clear all saved order history on this device?")) return;
+      saveHistory([]);
+      renderDashboard();
+      showToast("History cleared.");
+    });
+
+    buildMessage();
+    renderDashboard();
+
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
+
+
+

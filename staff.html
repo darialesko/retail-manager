@@ -1,0 +1,908 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Staff Availability</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f1eb;
+      --panel: #fffdf9;
+      --ink: #1d2521;
+      --muted: #66736d;
+      --line: #d8d0c5;
+      --accent: #0f766e;
+      --accent-dark: #0a5d57;
+      --saved: #0284c7;
+      --saved-soft: #e0f2fe;
+      --soft: #e8f5f2;
+      --shadow: 0 16px 38px rgba(29, 37, 33, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(920px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 22px 0 36px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+
+    h1,
+    h2,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: clamp(28px, 5vw, 42px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .subtitle,
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .subtitle {
+      margin-bottom: 0;
+      font-size: 15px;
+    }
+
+    .top-actions,
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    a.button,
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    a.button:hover,
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    button.secondary,
+    a.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    button.secondary:hover,
+    a.secondary:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+
+    section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbf8f3;
+    }
+
+    .section-body {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    .import-panel {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .import-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .availability-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .availability-day {
+      display: grid;
+      gap: 6px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .availability-day.is-saved {
+      border-color: #7dd3fc;
+      background: var(--saved-soft);
+    }
+
+    .availability-row {
+      display: grid;
+      grid-template-columns: minmax(86px, 0.9fr) 1fr 1fr auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .day-title {
+      min-height: 40px;
+      display: grid;
+      align-content: center;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .day-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .check {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .check input {
+      width: 18px;
+      min-height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .availability-grid.is-saved .check input:checked {
+      accent-color: var(--saved);
+    }
+
+    .mini-button {
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mini-button:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+
+    .status {
+      min-height: 20px;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      z-index: 20;
+      transform: translate(-50%, 18px);
+      min-width: min(360px, calc(100% - 28px));
+      padding: 14px 16px;
+      border: 1px solid #7dd3fc;
+      border-radius: 8px;
+      background: #f0f9ff;
+      color: #075985;
+      box-shadow: 0 18px 42px rgba(14, 116, 144, 0.22);
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 760px) {
+      header,
+      .control-grid,
+      .availability-row {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: stretch;
+      }
+
+      a.button,
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Staff Availability</h1>
+        <p class="subtitle">Mark when you can work. Managers approve the final roster. <span id="appVersion"></span></p>
+      </div>
+    </header>
+
+    <section>
+      <div class="section-head">
+        <h2>Availability</h2>
+        <span id="weekLabel" class="hint"></span>
+      </div>
+      <div class="section-body">
+        <div class="control-grid">
+          <label>
+            Staff member
+            <select id="staffSelect"></select>
+          </label>
+          <label>
+            Location
+            <select id="locationSelect"></select>
+          </label>
+          <label>
+            Week
+            <select id="weekSelect"></select>
+          </label>
+        </div>
+
+        <div class="import-panel">
+          <label>
+            Paste Messenger availability
+            <textarea id="whatsappText" placeholder="Example: Mon 17:30-00:00&#10;Sat 07:30-10:30 and 21:00-00:00"></textarea>
+          </label>
+          <div class="import-actions">
+            <button id="importWhatsappButton" class="secondary" type="button">Import Messenger text</button>
+            <span class="hint">Use day names with times. Example: Mon 7:30-17:30, Sat 7:30-10:30 and 21:00-00:00.</span>
+          </div>
+        </div>
+
+        <div id="availabilityGrid" class="availability-grid"></div>
+
+        <div class="actions">
+          <button id="saveButton" type="button">Save availability</button>
+          <button id="fillEveningsButton" class="secondary" type="button">Fill evenings</button>
+        </div>
+
+        <div id="status" class="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const stateKey = "retailShiftCashflowTrackerPublicDemoV2";
+    const appVersion = "staff v4";
+    const openTime = "07:30";
+    const handoverTime = "17:30";
+    const closeTime = "24:00";
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const defaultLocations = [
+      { id: "main", name: "Store 1" },
+      { id: "second", name: "Store 2" }
+    ];
+    const defaultStaff = [
+      { id: "owner", name: "Owner", phone: "", rate: "20", defaultStart: openTime, defaultEnd: handoverTime, defaultAvailable: true },
+      { id: "supplier", name: "Supplier", phone: "+15550101010", rate: "20" },
+      { id: "staff_b", name: "Staff B", phone: "", rate: "20" },
+      { id: "staff_a", name: "Staff A", phone: "", rate: "20" }
+    ];
+
+    const appVersionEl = document.getElementById("appVersion");
+    const weekLabelEl = document.getElementById("weekLabel");
+    const staffSelectEl = document.getElementById("staffSelect");
+    const locationSelectEl = document.getElementById("locationSelect");
+    const weekSelectEl = document.getElementById("weekSelect");
+    const availabilityGridEl = document.getElementById("availabilityGrid");
+    const saveButtonEl = document.getElementById("saveButton");
+    const fillEveningsButtonEl = document.getElementById("fillEveningsButton");
+    const whatsappTextEl = document.getElementById("whatsappText");
+    const importWhatsappButtonEl = document.getElementById("importWhatsappButton");
+    const statusEl = document.getElementById("status");
+    const toastEl = document.getElementById("toast");
+
+    let state = loadState();
+    appVersionEl.textContent = appVersion;
+
+    function mondayOf(date) {
+      const result = new Date(date);
+      const day = result.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      result.setDate(result.getDate() + diff);
+      result.setHours(0, 0, 0, 0);
+      return result;
+    }
+
+    function addDays(date, amount) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + amount);
+      return result;
+    }
+
+    function isoDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function baseWeekStart() {
+      return isoDate(mondayOf(new Date()));
+    }
+
+    function nextWeekStart() {
+      return isoDate(addDays(new Date(`${state.baseWeekStart}T00:00:00`), 7));
+    }
+
+    function niceDate(iso) {
+      const date = new Date(`${iso}T00:00:00`);
+      return `${dayNames[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`;
+    }
+
+    function displayTime(value) {
+      return value === "24:00" ? "00:00" : value;
+    }
+
+    function storeEndTime(value) {
+      return value === "00:00" ? "24:00" : value;
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(stateKey)) || {};
+        const base = baseWeekStart();
+        const activeWeekStart = saved.activeWeekStart || base;
+        return {
+          baseWeekStart: base,
+          activeWeekStart: activeWeekStart < base ? base : activeWeekStart,
+          activeLocation: saved.activeLocation || "main",
+          locations: mergeLocations(saved.locations),
+          staff: mergeStaff(saved.staff),
+          schedules: saved.schedules || {}
+        };
+      } catch {
+        return {
+          baseWeekStart: baseWeekStart(),
+          activeWeekStart: baseWeekStart(),
+          activeLocation: "main",
+          locations: mergeLocations(),
+          staff: mergeStaff(),
+          schedules: {}
+        };
+      }
+    }
+
+    function mergeLocations(savedLocations = []) {
+      return defaultLocations.map((location) => {
+        const saved = savedLocations.find((item) => item.id === location.id) || {};
+        return { ...location, ...saved };
+      });
+    }
+
+    function mergeStaff(savedStaff = []) {
+      return defaultStaff.map((person) => {
+        const saved = savedStaff.find((item) => item.id === person.id) || {};
+        return { ...person, ...saved, rate: saved.rate || person.rate };
+      });
+    }
+
+    function saveState() {
+      localStorage.setItem(stateKey, JSON.stringify(state));
+    }
+
+    function selectedWeekStart() {
+      return state.activeWeekStart || state.baseWeekStart;
+    }
+
+    function scheduleKey() {
+      return `${state.activeLocation}__${selectedWeekStart()}`;
+    }
+
+    function currentSchedule() {
+      const key = scheduleKey();
+      if (!state.schedules[key]) {
+        state.schedules[key] = {
+          availability: {},
+          roster: {},
+          payroll: {},
+          approved: false,
+          approvedAt: ""
+        };
+      }
+      if (!state.schedules[key].availability) state.schedules[key].availability = {};
+      if (!state.schedules[key].roster) state.schedules[key].roster = {};
+      if (!state.schedules[key].payroll) state.schedules[key].payroll = {};
+      return state.schedules[key];
+    }
+
+    function currentLocation() {
+      return state.locations.find((location) => location.id === state.activeLocation) || state.locations[0];
+    }
+
+    function scheduleKeyParts(key) {
+      const marker = "__";
+      const index = key.lastIndexOf(marker);
+      if (index < 0) return null;
+      return {
+        locationId: key.slice(0, index),
+        weekStart: key.slice(index + marker.length)
+      };
+    }
+
+    function weekRangeDates(weekStart) {
+      const start = new Date(`${weekStart}T00:00:00`);
+      return Array.from({ length: 7 }, (_, index) => isoDate(addDays(start, index)));
+    }
+
+    function weekDates() {
+      return weekRangeDates(selectedWeekStart());
+    }
+
+    function getAvailability(staffId, date) {
+      const person = state.staff.find((item) => item.id === staffId);
+      const schedule = currentSchedule();
+      const saved = schedule.availability?.[staffId]?.[date];
+      const fallback = {
+        available: Boolean(person?.defaultAvailable),
+        start: person?.defaultStart || handoverTime,
+        end: person?.defaultEnd || closeTime
+      };
+      if (!saved) return fallback;
+      if (Array.isArray(saved.slots)) {
+        const first = saved.slots[0] || fallback;
+        return {
+          available: Boolean(first.available),
+          start: first.start || fallback.start,
+          end: first.end || fallback.end,
+          slots: saved.slots
+        };
+      }
+      return saved;
+    }
+
+    function setAvailability(staffId, date, value) {
+      const schedule = currentSchedule();
+      if (!schedule.availability[staffId]) schedule.availability[staffId] = {};
+      schedule.availability[staffId][date] = value;
+      schedule.rosterNeedsRefresh = true;
+      schedule.rosterNeedsRefreshSignature = "";
+      saveState();
+    }
+
+    function showStatus(message, options = {}) {
+      statusEl.textContent = message;
+      window.clearTimeout(showStatus.timer);
+      showStatus.timer = window.setTimeout(() => {
+        statusEl.textContent = "";
+      }, 2400);
+      if (options.toast) showToast(message);
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("is-visible");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => {
+        toastEl.classList.remove("is-visible");
+      }, 2200);
+    }
+
+    function markAvailabilitySaved() {
+      availabilityGridEl.classList.add("is-saved");
+      availabilityGridEl.querySelectorAll(".availability-day").forEach((day) => {
+        day.classList.add("is-saved");
+      });
+      showStatus("Availability saved.", { toast: true });
+    }
+
+    function markAvailabilityChanged() {
+      availabilityGridEl.classList.remove("is-saved");
+      availabilityGridEl.querySelectorAll(".availability-day").forEach((day) => {
+        day.classList.remove("is-saved");
+      });
+    }
+
+    function renderStaffSelect() {
+      staffSelectEl.innerHTML = "";
+      state.staff.forEach((person) => {
+        const option = document.createElement("option");
+        option.value = person.id;
+        option.textContent = person.name;
+        staffSelectEl.append(option);
+      });
+    }
+
+    function renderLocationSelect() {
+      locationSelectEl.innerHTML = "";
+      state.locations.forEach((location) => {
+        const option = document.createElement("option");
+        option.value = location.id;
+        option.textContent = location.name;
+        locationSelectEl.append(option);
+      });
+      locationSelectEl.value = state.activeLocation;
+    }
+
+    function renderWeekSelect() {
+      const weekStarts = new Set([state.baseWeekStart, nextWeekStart(), selectedWeekStart()]);
+      Object.keys(state.schedules || {}).forEach((key) => {
+        const parts = scheduleKeyParts(key);
+        if (parts?.locationId === state.activeLocation) weekStarts.add(parts.weekStart);
+      });
+
+      weekSelectEl.innerHTML = "";
+      Array.from(weekStarts).sort().forEach((weekStart) => {
+        const option = document.createElement("option");
+        option.value = weekStart;
+        const dates = weekRangeDates(weekStart);
+        const label = weekStart === state.baseWeekStart
+          ? "Current week"
+          : weekStart === nextWeekStart()
+            ? "Next week"
+            : "Saved week";
+        option.textContent = `${label}: ${niceDate(dates[0])} - ${niceDate(dates[6])}`;
+        weekSelectEl.append(option);
+      });
+      weekSelectEl.value = selectedWeekStart();
+    }
+
+    function renderWeekLabel() {
+      const dates = weekDates();
+      weekLabelEl.textContent = `${currentLocation().name}: ${niceDate(dates[0])} - ${niceDate(dates[6])}`;
+    }
+
+    function normalizeTime(value) {
+      const match = String(value || "").trim().match(/^(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?$/i);
+      if (!match) return "";
+      let hour = Number.parseInt(match[1], 10);
+      const minute = match[2] || "00";
+      const meridiem = (match[3] || "").toLowerCase();
+      if (meridiem === "pm" && hour < 12) hour += 12;
+      if (meridiem === "am" && hour === 12) hour = 0;
+      if (hour === 24 && minute === "00") return closeTime;
+      if (hour < 0 || hour > 23 || Number.parseInt(minute, 10) > 59) return "";
+      return `${String(hour).padStart(2, "0")}:${minute}`;
+    }
+
+    function dayIndexFromText(value) {
+      const text = value.toLowerCase();
+      const dayMap = [
+        ["mon", "monday", "Ð¿Ð½", "Ð¿Ð¾Ð½", "Ð¿Ð¾Ð½ÐµÐ´ÐµÐ»ÑŒÐ½Ð¸Ðº"],
+        ["tue", "tues", "tuesday", "Ð²Ñ‚", "Ð²Ñ‚Ð¾Ñ€Ð½Ð¸Ðº"],
+        ["wed", "wednesday", "ÑÑ€", "ÑÑ€ÐµÐ´Ð°", "ÑÑ€ÐµÐ´Ñƒ"],
+        ["thu", "thur", "thurs", "thursday", "Ñ‡Ñ‚", "Ñ‡ÐµÑ‚Ð²ÐµÑ€Ð³"],
+        ["fri", "friday", "Ð¿Ñ‚", "Ð¿ÑÑ‚Ð½Ð¸Ñ†Ð°", "Ð¿ÑÑ‚Ð½Ð¸Ñ†Ñƒ"],
+        ["sat", "saturday", "ÑÐ±", "ÑÑƒÐ±Ð±Ð¾Ñ‚Ð°", "ÑÑƒÐ±Ð±Ð¾Ñ‚Ñƒ"],
+        ["sun", "sunday", "Ð²Ñ", "Ð²Ð¾ÑÐº", "Ð²Ð¾ÑÐºÑ€ÐµÑÐµÐ½ÑŒÐµ"]
+      ];
+      return dayMap.findIndex((names) => names.some((name) => new RegExp(`(^|[^a-zÐ°-Ñ])${name}([^a-zÐ°-Ñ]|$)`, "i").test(text)));
+    }
+
+    function parseAvailabilityLine(line) {
+      const dayIndex = dayIndexFromText(line);
+      if (dayIndex < 0) return null;
+      const unavailable = /\b(off|no|not available|cannot|can't|cant)\b|Ð½Ðµ Ð¼Ð¾Ð³Ñƒ|Ð½ÐµÐ´Ð¾ÑÑ‚ÑƒÐ¿|Ð²Ñ‹Ñ…Ð¾Ð´Ð½/i.test(line);
+      if (unavailable) return { dayIndex, slots: [{ available: false, start: handoverTime, end: closeTime }] };
+
+      const ranges = [];
+      const rangePattern = /(\d{1,2}(?::?\d{2})?\s*(?:am|pm)?)\s*(?:-|â€“|â€”|to|until|Ð´Ð¾)\s*(\d{1,2}(?::?\d{2})?\s*(?:am|pm)?)/gi;
+      let match;
+      while ((match = rangePattern.exec(line)) && ranges.length < 2) {
+        const start = normalizeTime(match[1]);
+        const end = storeEndTime(normalizeTime(match[2]));
+        if (start && end) ranges.push({ available: true, start, end });
+      }
+      if (ranges.length === 0) return null;
+      return { dayIndex, slots: ranges };
+    }
+
+    function importWhatsappAvailability() {
+      const staffId = staffSelectEl.value;
+      const lines = whatsappTextEl.value.split(/\r?\n|;/).map((line) => line.trim()).filter(Boolean);
+      let imported = 0;
+
+      lines.forEach((line) => {
+        const parsed = parseAvailabilityLine(line);
+        if (!parsed) return;
+        const date = weekDates()[parsed.dayIndex];
+        setAvailability(staffId, date, { slots: parsed.slots });
+        imported += 1;
+      });
+
+      if (imported === 0) {
+        showStatus("No availability found. Try: Mon 17:30-00:00.");
+        return;
+      }
+
+      renderAvailability();
+      markAvailabilitySaved();
+      whatsappTextEl.value = "";
+      showStatus(`${imported} day${imported === 1 ? "" : "s"} imported from Messenger.`, { toast: true });
+    }
+
+    function renderAvailability() {
+      const staffId = staffSelectEl.value || state.staff[0].id;
+      const person = state.staff.find((item) => item.id === staffId);
+      availabilityGridEl.innerHTML = "";
+
+      weekDates().forEach((date) => {
+        const availability = getAvailability(staffId, date);
+        const slots = availability.slots || [{
+          available: availability.available,
+          start: availability.start,
+          end: availability.end
+        }];
+        if (slots.length === 0) slots.push({ available: false, start: handoverTime, end: closeTime });
+
+        const day = document.createElement("div");
+        day.className = "availability-day";
+        const controls = [];
+
+        function saveSlots() {
+          markAvailabilityChanged();
+          setAvailability(staffId, date, {
+            slots: controls.map((item) => ({
+              available: item.checkbox.checked,
+              start: item.startInput.value,
+              end: storeEndTime(item.endInput.value)
+            }))
+          });
+          showStatus("Availability auto-saved.");
+        }
+
+        function makeSlotControls(slot, slotIndex) {
+          const row = document.createElement("div");
+          row.className = "availability-row";
+
+          const title = document.createElement("div");
+          title.className = "day-title";
+          title.innerHTML = slotIndex === 0
+            ? `${niceDate(date)}<span>${person.defaultStart ? "default day shift" : "available time"}</span>`
+            : `Slot ${slotIndex + 1}<span>extra time</span>`;
+
+          const startLabel = document.createElement("label");
+          startLabel.textContent = slotIndex === 0 ? "Start" : "Start 2";
+          const startInput = document.createElement("input");
+          startInput.type = "time";
+          startInput.value = slot.start || person.defaultStart || handoverTime;
+          startLabel.append(startInput);
+
+          const endLabel = document.createElement("label");
+          endLabel.textContent = slotIndex === 0 ? "End" : "End 2";
+          const endInput = document.createElement("input");
+          endInput.type = "time";
+          endInput.value = displayTime(slot.end || person.defaultEnd || closeTime);
+          endLabel.append(endInput);
+
+          const checkLabel = document.createElement("label");
+          checkLabel.className = "check";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = Boolean(slot.available);
+          checkLabel.append(checkbox, document.createTextNode(slotIndex === 0 ? "Can work" : "Slot 2"));
+
+          controls.push({ startInput, endInput, checkbox });
+
+          const slotButton = document.createElement("button");
+          slotButton.type = "button";
+          slotButton.className = "mini-button";
+
+          if (slotIndex === 0 && slots.length < 2) {
+            slotButton.textContent = "Add slot";
+            slotButton.addEventListener("click", () => {
+              setAvailability(staffId, date, {
+                slots: [
+                  {
+                    available: controls[0].checkbox.checked,
+                    start: controls[0].startInput.value,
+                    end: storeEndTime(controls[0].endInput.value)
+                  },
+                  { available: true, start: "21:00", end: closeTime }
+                ]
+              });
+              renderAvailability();
+              markAvailabilitySaved();
+              showStatus("Second slot added.", { toast: true });
+            });
+          } else if (slotIndex > 0) {
+            slotButton.textContent = "Remove";
+            slotButton.addEventListener("click", () => {
+              const kept = controls
+                .filter((_, index) => index !== slotIndex)
+                .map((item) => ({
+                  available: item.checkbox.checked,
+                  start: item.startInput.value,
+                  end: storeEndTime(item.endInput.value)
+                }));
+              setAvailability(staffId, date, { slots: kept });
+              renderAvailability();
+              markAvailabilitySaved();
+              showStatus("Slot removed.", { toast: true });
+            });
+          } else {
+            slotButton.textContent = "Keep";
+            slotButton.disabled = true;
+          }
+
+          [startInput, endInput, checkbox].forEach((control) => {
+            control.addEventListener("change", saveSlots);
+          });
+
+          row.append(title, startLabel, endLabel, checkLabel, slotButton);
+          return row;
+        }
+
+        day.append(makeSlotControls(slots[0], 0));
+        if (slots[1]) day.append(makeSlotControls(slots[1], 1));
+        availabilityGridEl.append(day);
+      });
+    }
+
+    function fillEvenings() {
+      const staffId = staffSelectEl.value;
+      weekDates().forEach((date) => {
+        setAvailability(staffId, date, {
+          slots: [{ available: true, start: handoverTime, end: closeTime }]
+        });
+      });
+      renderAvailability();
+      markAvailabilitySaved();
+      showStatus("Evening availability filled.", { toast: true });
+    }
+
+    function renderAll() {
+      renderLocationSelect();
+      renderWeekSelect();
+      renderWeekLabel();
+      renderStaffSelect();
+      renderAvailability();
+    }
+
+    staffSelectEl.addEventListener("change", renderAvailability);
+    locationSelectEl.addEventListener("change", () => {
+      state.activeLocation = locationSelectEl.value;
+      saveState();
+      renderAll();
+      showStatus(`${currentLocation().name} selected.`);
+    });
+    weekSelectEl.addEventListener("change", () => {
+      state.activeWeekStart = weekSelectEl.value;
+      saveState();
+      renderAll();
+      showStatus("Week selected.");
+    });
+    saveButtonEl.addEventListener("click", markAvailabilitySaved);
+    importWhatsappButtonEl.addEventListener("click", importWhatsappAvailability);
+    fillEveningsButtonEl.addEventListener("click", fillEvenings);
+
+    renderAll();
+
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
+
+
+
