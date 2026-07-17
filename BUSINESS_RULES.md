@@ -47,6 +47,10 @@ the business meaning.
 - The app should prefer append-only ledger records for new facts.
 - After a structural data change, release is blocked unless
   `tools/data-dependency-check.js` and `tools/regression-check.js` both pass.
+- Migration bridge code must have an automated parity test. The test must run
+  the real bridge functions against stale legacy state, prove that ledger totals
+  match legacy hours/payments/cash/terminal facts, and prove that a second run
+  does not create duplicates.
 - Active manager views must read approved hours, approved payments, cash
   movements, and terminal totals from ledger-first derivations. Legacy schedule
   fields are allowed only for drafts, form state, and guarded baseline

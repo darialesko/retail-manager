@@ -22,6 +22,11 @@ function moneyEqual(actual, expected, message) {
   assert(Math.abs(Number(actual) - Number(expected)) < 0.005, `${message}: expected ${expected}, got ${actual}`);
 }
 
+function numberOrZero(value) {
+  const parsed = Number(String(value ?? "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function extractScripts(html) {
   return [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
     .map((match) => match[1].replace(/^\s*import\s+.*?;\s*$/gm, ""))
@@ -65,6 +70,129 @@ function byStaff(rows, staffId) {
   return rows.find((row) => row.staffId === staffId) || {};
 }
 
+function runLegacyBridgeParityFixture(inputState) {
+  const sandbox = {
+    state: JSON.parse(JSON.stringify(inputState)),
+    LedgerModel,
+    console,
+    Date,
+    setTimeout,
+    clearTimeout
+  };
+  const prelude = `
+    const state = sandbox.state;
+    const LedgerModel = sandbox.LedgerModel;
+    const closeTime = "00:00";
+    const staff = [
+      { id: "owner", name: "Owner", rate: 20 },
+      { id: "staff_a", name: "Staff A", rate: 20 },
+      { id: "staff_b", name: "Staff B", rate: 20 },
+      { id: "staff_c", name: "Staff C", rate: 20 }
+    ];
+    function numberValue(value) {
+      const parsed = Number(String(value ?? "").replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    function hasNumberInput(value) {
+      if (value === null || value === undefined || value === "") return false;
+      return Number.isFinite(Number(String(value).replace(",", ".")));
+    }
+    function isoDate(date) {
+      const value = date instanceof Date ? date : new Date(date);
+      const y = value.getFullYear();
+      const m = String(value.getMonth() + 1).padStart(2, "0");
+      const d = String(value.getDate()).padStart(2, "0");
+      return \`\${y}-\${m}-\${d}\`;
+    }
+    function addDays(date, days) {
+      const copy = new Date(date);
+      copy.setDate(copy.getDate() + days);
+      return copy;
+    }
+    function scheduleKeyParts(key) {
+      const parts = String(key || "").split("__");
+      return { locationId: parts[0] || "main", weekStart: parts[1] || "" };
+    }
+    function minutesBetween(start, end) {
+      const parse = (value) => {
+        const [h, m] = String(value || "00:00").split(":").map(Number);
+        return h * 60 + m;
+      };
+      let endMinutes = parse(end);
+      const startMinutes = parse(start);
+      if (endMinutes <= startMinutes) endMinutes += 24 * 60;
+      return Math.max(0, endMinutes - startMinutes);
+    }
+    function effectiveShiftHours(entry) {
+      return minutesBetween(entry.actualStart || entry.start, entry.actualEnd || entry.end) / 60;
+    }
+    function ensureLedgerShape() {
+      state.ledger = state.ledger || {};
+      state.ledger.shifts = Array.isArray(state.ledger.shifts) ? state.ledger.shifts : [];
+      state.ledger.payments = Array.isArray(state.ledger.payments) ? state.ledger.payments : [];
+      state.ledger.cashMovements = Array.isArray(state.ledger.cashMovements) ? state.ledger.cashMovements : [];
+      state.ledger.terminalReports = Array.isArray(state.ledger.terminalReports) ? state.ledger.terminalReports : [];
+      return state.ledger;
+    }
+    function ledger() {
+      return ensureLedgerShape();
+    }
+    function normalizeCashflowDay(day = {}) {
+      return { ...day };
+    }
+    function normalizePayroll(payroll = {}) {
+      return {
+        cashPaid: payroll.cashPaid || "",
+        transferPaid: payroll.transferPaid || "",
+        approvedCashPaid: payroll.approvedCashPaid || "",
+        approvedTransferPaid: payroll.approvedTransferPaid || "",
+        paymentDate: payroll.paymentDate || "",
+        draftPaymentDate: payroll.draftPaymentDate || "",
+        payments: Array.isArray(payroll.payments) ? payroll.payments : [],
+        paymentApproved: Boolean(payroll.paymentApproved),
+        paymentApprovedAt: payroll.paymentApprovedAt || "",
+        draftUpdatedAt: payroll.draftUpdatedAt || ""
+      };
+    }
+    function upsertLedgerShift(record) {
+      const items = ledger().shifts;
+      const index = items.findIndex((item) => item.id === record.id);
+      if (index >= 0) items[index] = { ...items[index], ...record };
+      else items.push(record);
+    }
+    function upsertLedgerPayment(record) {
+      const items = ledger().payments;
+      const index = items.findIndex((item) => item.id === record.id);
+      if (index >= 0) items[index] = { ...items[index], ...record };
+      else items.push(record);
+    }
+    function upsertCashMovement(record) {
+      const items = ledger().cashMovements;
+      const index = items.findIndex((item) => item.id === record.id);
+      if (index >= 0) items[index] = { ...items[index], ...record };
+      else items.push(record);
+    }
+    function upsertTerminalReport(record) {
+      const items = ledger().terminalReports;
+      const index = items.findIndex((item) => item.id === record.id);
+      if (index >= 0) items[index] = { ...items[index], ...record };
+      else items.push(record);
+    }
+  `;
+  const names = [
+    "ledgerPaymentEquivalentExists",
+    "syncApprovedSchedulePaymentsToLedger",
+    "ledgerShiftEquivalentExists",
+    "legacyActualShiftRecord",
+    "syncApprovedScheduleActualsToLedger",
+    "syncLedgerCashflowField",
+    "ledgerCashflowEquivalentExists",
+    "syncLegacyCashflowToLedger"
+  ];
+  const body = `${prelude}\n${names.map((name) => extractFunction(managerScripts, name)).join("\n")}\nreturn {\n  actuals: syncApprovedScheduleActualsToLedger(),\n  payments: syncApprovedSchedulePaymentsToLedger(),\n  cashflow: syncLegacyCashflowToLedger(),\n  state\n};`;
+  return new Function("sandbox", body)(sandbox);
+}
+
 const manager = read("manager.html");
 const sw = read("sw.js");
 const ledgerSource = read("ledger-model.js");
@@ -74,6 +202,72 @@ const managerScripts = extractScripts(manager);
 for (const error of runDataDependencyCheck()) {
   fail(`data dependency: ${error}`);
 }
+
+const legacyBridgeFixture = {
+  guards: {},
+  repairs: [],
+  schedules: {
+    "main__2026-01-20": {
+      roster: {
+        "2026-01-20": [
+          {
+            staffId: "owner",
+            start: "07:30",
+            end: "17:30",
+            actualStart: "08:00",
+            actualEnd: "17:30",
+            actualApproved: true,
+            actualApprovedAt: "fixture approved"
+          }
+        ]
+      },
+      payroll: {
+        owner: {
+          paymentApproved: true,
+          paymentDate: "2026-01-20",
+          payments: [
+            { id: "fixture-owner-payment", date: "2026-01-20", cash: "190", transfer: "25", approvedAt: "fixture approved" }
+          ]
+        }
+      },
+      cashflow: {
+        "2026-01-20": {
+          openingCash: "100",
+          midCash: "250",
+          closingCash: "400",
+          previousTerminal: "123.45",
+          midTerminal: "600.50",
+          closingTerminal: "900.75"
+        }
+      }
+    }
+  },
+  ledger: { shifts: [], payments: [], cashMovements: [], terminalReports: [] }
+};
+const bridgeFirstRun = runLegacyBridgeParityFixture(legacyBridgeFixture);
+assert(bridgeFirstRun.actuals, "legacy actual-hours bridge must write stale approved actuals into ledger");
+assert(bridgeFirstRun.payments, "legacy payroll bridge must write stale approved payments into ledger");
+assert(bridgeFirstRun.cashflow, "legacy cashflow bridge must write stale cashflow into ledger");
+moneyEqual(bridgeFirstRun.state.ledger.shifts.length, 1, "legacy bridge shift count");
+moneyEqual(bridgeFirstRun.state.ledger.shifts[0].hours, 9.5, "legacy bridge approved actual hours");
+moneyEqual(bridgeFirstRun.state.ledger.payments.length, 2, "legacy bridge payment allocation count");
+moneyEqual(bridgeFirstRun.state.ledger.payments.reduce((sum, item) => sum + numberOrZero(item.amount), 0), 215, "legacy bridge payment total");
+moneyEqual(bridgeFirstRun.state.ledger.cashMovements.length, 3, "legacy bridge cash movement count");
+moneyEqual(bridgeFirstRun.state.ledger.cashMovements.find((item) => item.type === "opening_count")?.amount, 100, "legacy bridge opening cash");
+moneyEqual(bridgeFirstRun.state.ledger.cashMovements.find((item) => item.type === "checkpoint_count")?.amount, 250, "legacy bridge checkpoint cash");
+moneyEqual(bridgeFirstRun.state.ledger.cashMovements.find((item) => item.type === "closing_count")?.amount, 400, "legacy bridge closing cash");
+moneyEqual(bridgeFirstRun.state.ledger.terminalReports.length, 3, "legacy bridge terminal report count");
+moneyEqual(bridgeFirstRun.state.ledger.terminalReports.find((item) => item.forDate === "2026-01-19")?.amount, 123.45, "legacy bridge previous terminal");
+moneyEqual(bridgeFirstRun.state.ledger.terminalReports.find((item) => item.kind === "after_shift")?.amount, 600.5, "legacy bridge after-shift terminal");
+moneyEqual(bridgeFirstRun.state.ledger.terminalReports.find((item) => item.kind === "closing" && item.forDate === "2026-01-20")?.amount, 900.75, "legacy bridge closing terminal");
+const bridgeSecondRun = runLegacyBridgeParityFixture(bridgeFirstRun.state);
+assert(!bridgeSecondRun.actuals, "legacy actual-hours bridge must be idempotent on second run");
+assert(!bridgeSecondRun.payments, "legacy payroll bridge must be idempotent on second run");
+assert(!bridgeSecondRun.cashflow, "legacy cashflow bridge must be idempotent on second run");
+moneyEqual(bridgeSecondRun.state.ledger.shifts.length, 1, "legacy bridge idempotent shift count");
+moneyEqual(bridgeSecondRun.state.ledger.payments.length, 2, "legacy bridge idempotent payment count");
+moneyEqual(bridgeSecondRun.state.ledger.cashMovements.length, 3, "legacy bridge idempotent cash count");
+moneyEqual(bridgeSecondRun.state.ledger.terminalReports.length, 3, "legacy bridge idempotent terminal count");
 
 assert(!manager.includes('type="module"'), "manager.html must run in file:// mode; do not use script type=module in the main app");
 assert(!/^\s*import\s+.*from\s+["']\.\/router\.js["'];/m.test(manager), "manager.html must not use top-level module imports");
@@ -190,6 +384,12 @@ assert(managerScripts.includes("function auditRows()"), "Audit page must derive 
 assert(managerScripts.includes("copyAuditButtonEl.addEventListener"), "Audit page must support copying evidence");
 assert(businessRules.includes("Approved actual hours are the only hours that count into payroll."), "BUSINESS_RULES.md must protect approved-actual-hours payroll logic");
 assert(businessRules.includes("The payment date and payroll allocation period may be different."), "BUSINESS_RULES.md must protect payment allocation semantics");
+assert(businessRules.includes("Migration bridge code must have an automated parity test"), "BUSINESS_RULES.md must require bridge parity testing");
+assert(businessRules.includes("does not create duplicates"), "BUSINESS_RULES.md must require bridge idempotency testing");
+assert(managerScripts.includes("function syncApprovedScheduleActualsToLedger"), "legacy approved actuals bridge must exist");
+assert(managerScripts.includes("function syncApprovedSchedulePaymentsToLedger"), "legacy payroll payments bridge must exist");
+assert(managerScripts.includes("function syncLegacyCashflowToLedger"), "legacy cashflow bridge must exist");
+assert(managerScripts.includes("legacyActualHoursLedgerSyncApplied || legacyPayrollPaymentsLedgerSyncApplied || legacyCashflowLedgerSyncApplied"), "startup must persist legacy bridge writes");
 assert(managerScripts.includes("function repairPreviousWeekRosterActuals20260121"), "previous week protected roster actuals repair must exist");
 assert(managerScripts.includes("repairPreviousWeekRosterActuals20260121()"), "previous week protected roster actuals repair must run on startup");
 assert(managerScripts.includes("function repairPreviousWeekOwnerPayments20260121"), "previous week Owner payment repair must exist");

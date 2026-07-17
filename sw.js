@@ -1,4 +1,4 @@
-const cacheName = "retail-shift-cashflow-tracker-v92";
+const cacheName = "retail-shift-cashflow-tracker-v99";
 const filesToCache = [
   "./",
   "./index.html",

@@ -61,6 +61,9 @@ function runDataDependencyCheck() {
   const cashflowTotalsForDay = extractFunction(scripts, "cashflowTotalsForDay");
   const payrollCashPaidForDate = extractFunction(scripts, "payrollCashPaidForDate");
   const terminalAmountForDay = extractFunction(scripts, "terminalAmountForDay");
+  const syncApprovedScheduleActualsToLedger = extractFunction(scripts, "syncApprovedScheduleActualsToLedger");
+  const syncApprovedSchedulePaymentsToLedger = extractFunction(scripts, "syncApprovedSchedulePaymentsToLedger");
+  const syncLegacyCashflowToLedger = extractFunction(scripts, "syncLegacyCashflowToLedger");
 
   assert(!manager.includes('type="number"'), "Money/rate inputs must not use type=number; decimal entry must be locale-safe.");
   assert(scripts.includes("function normalizeDecimalText"), "Decimal parsing must be centralized.");
@@ -81,6 +84,16 @@ function runDataDependencyCheck() {
   assert(payrollCashPaidForDate.includes("ledgerCashPaidForDate"), "Staff payout helper must read ledger payments by paidOn date.");
   assert(!payrollCashPaidForDate.includes("schedule.payroll"), "Staff payout helper must not fall back to legacy schedule.payroll.");
   assert(terminalAmountForDay.includes("LedgerModel.terminalForDate"), "Terminal totals must prefer ledger terminal reports.");
+  assert(syncApprovedScheduleActualsToLedger.includes("schedule.roster"), "Legacy approved actuals bridge must read stale schedule.roster rows.");
+  assert(syncApprovedScheduleActualsToLedger.includes("ledgerShiftEquivalentExists"), "Legacy approved actuals bridge must dedupe equivalent shift records.");
+  assert(syncApprovedSchedulePaymentsToLedger.includes("schedule.payroll"), "Legacy payroll bridge must read stale schedule.payroll rows.");
+  assert(syncApprovedSchedulePaymentsToLedger.includes("ledgerPaymentEquivalentExists"), "Legacy payroll bridge must dedupe equivalent payment records.");
+  assert(syncLegacyCashflowToLedger.includes("schedule.cashflow"), "Legacy cashflow bridge must read stale schedule.cashflow rows.");
+  assert(syncLegacyCashflowToLedger.includes("ledgerCashflowEquivalentExists"), "Legacy cashflow bridge must dedupe equivalent cashflow records.");
+  assert(scripts.includes("const legacyActualHoursLedgerSyncApplied = syncApprovedScheduleActualsToLedger();"), "Startup must run approved actuals bridge.");
+  assert(scripts.includes("const legacyPayrollPaymentsLedgerSyncApplied = syncApprovedSchedulePaymentsToLedger();"), "Startup must run payroll payments bridge.");
+  assert(scripts.includes("const legacyCashflowLedgerSyncApplied = syncLegacyCashflowToLedger();"), "Startup must run cashflow bridge.");
+  assert(scripts.includes("legacyActualHoursLedgerSyncApplied || legacyPayrollPaymentsLedgerSyncApplied || legacyCashflowLedgerSyncApplied"), "Startup must save state when any legacy bridge writes data.");
 
   return errors;
 }

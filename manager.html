@@ -1186,7 +1186,7 @@
     const stateKey = "retailShiftCashflowTrackerPublicDemoV2";
     const dailyBackupKey = `${stateKey}:mandatoryDailyBackups`;
     const maxMandatoryDailyBackups = 45;
-    const appVersion = "manager v72";
+    const appVersion = "manager v78";
     const openTime = "07:30";
     const handoverTime = "17:30";
     const closeTime = "24:00";
@@ -1922,6 +1922,72 @@
       else records.push(record);
     }
 
+    function ledgerPaymentEquivalentExists(record) {
+      return ledger().payments.some((payment) => {
+        if (payment.id === record.id) return true;
+        const paymentAllocation = payment.allocation || [];
+        const recordAllocation = record.allocation || [];
+        return payment.staffId === record.staffId &&
+          payment.paidOn === record.paidOn &&
+          (payment.method || "cash") === (record.method || "cash") &&
+          Math.abs(numberValue(payment.amount) - numberValue(record.amount)) < 0.005 &&
+          recordAllocation.every((expected) => (
+            Math.abs(paymentAllocation
+              .filter((allocation) => allocation.forWeekStart === expected.forWeekStart)
+              .reduce((total, allocation) => total + numberValue(allocation.amount), 0) - numberValue(expected.amount)) < 0.005
+          ));
+      });
+    }
+
+    function syncApprovedSchedulePaymentsToLedger() {
+      let changed = false;
+      Object.entries(state.schedules || {}).forEach(([key, schedule]) => {
+        const parts = scheduleKeyParts(key);
+        if (!parts || !schedule.payroll) return;
+        Object.entries(schedule.payroll).forEach(([staffId, payrollData]) => {
+          const payroll = normalizePayroll(payrollData);
+          if (!payroll.paymentApproved && payroll.payments.length === 0) return;
+          payroll.payments.forEach((legacyPayment) => {
+            const cashAmount = numberValue(legacyPayment.cash);
+            const transferAmount = numberValue(legacyPayment.transfer);
+            [
+              { method: "cash", amount: cashAmount },
+              { method: "transfer", amount: transferAmount }
+            ].forEach(({ method, amount }) => {
+              if (amount <= 0) return;
+              const paidOn = legacyPayment.date || payroll.paymentDate || parts.weekStart;
+              const record = {
+                id: `legacy_${parts.locationId}_${parts.weekStart}_${staffId}_${legacyPayment.id || paidOn}_${method}`.replace(/[^a-zA-Z0-9_:-]/g, "_"),
+                staffId,
+                amount,
+                paidOn,
+                allocation: [{ forWeekStart: parts.weekStart, amount }],
+                method,
+                cashMovementId: method === "cash" ? `cm_legacy_${parts.locationId}_${parts.weekStart}_${staffId}_${legacyPayment.id || paidOn}`.replace(/[^a-zA-Z0-9_:-]/g, "_") : "",
+                sourceRef: "legacy-schedule-payroll-sync",
+                note: legacyPayment.approvedAt || payroll.paymentApprovedAt || "approved legacy payroll payment"
+              };
+              if (ledgerPaymentEquivalentExists(record)) return;
+              upsertLedgerPayment(record);
+              changed = true;
+            });
+          });
+        });
+      });
+      if (!changed) return false;
+      state.guards = { ...(state.guards || {}) };
+      state.guards.legacyPayrollPaymentsLedgerSync20260121v1 = new Date().toISOString();
+      state.repairs = Array.isArray(state.repairs) ? state.repairs : [];
+      state.repairs.push({
+        id: "repair_legacyPayrollPaymentsLedgerSync20260121v1",
+        guardFlag: "legacyPayrollPaymentsLedgerSync20260121v1",
+        appliedAt: state.guards.legacyPayrollPaymentsLedgerSync20260121v1,
+        description: "Synced approved legacy schedule payroll payments into ledger allocations without duplicating equivalent existing payments.",
+        affects: ["ledger.payments"]
+      });
+      return true;
+    }
+
     function upsertLedgerShift(record) {
       const records = ledger().shifts;
       const index = records.findIndex((item) => item.id === record.id);
@@ -1929,11 +1995,22 @@
       else records.push(record);
     }
 
-    function syncActualShiftToLedger(entry, date, sourceRef) {
-      if (!entry.staffId || !entry.actualApproved) return;
+    function ledgerShiftEquivalentExists(record) {
+      return ledger().shifts.some((shift) => {
+        if (shift.id === record.id) return true;
+        return shift.staffId === record.staffId &&
+          shift.date === record.date &&
+          ["approved", "locked"].includes(shift.status) &&
+          displayTime(shift.actualStart || shift.plannedStart) === displayTime(record.actualStart || record.plannedStart) &&
+          displayTime(shift.actualEnd || shift.plannedEnd) === displayTime(record.actualEnd || record.plannedEnd) &&
+          Math.abs(numberValue(shift.hours) - numberValue(record.hours)) < 0.005;
+      });
+    }
+
+    function legacyActualShiftRecord(entry, date, sourceRef) {
       const actualStart = entry.actualStart || entry.start;
       const actualEnd = entry.actualEnd || entry.end;
-      upsertLedgerShift({
+      return {
         id: `shift_${date}_${entry.staffId}_${entry.start}_${entry.end}`.replace(/[^a-zA-Z0-9_:-]/g, "_"),
         staffId: entry.staffId,
         date,
@@ -1941,12 +2018,44 @@
         plannedEnd: entry.end,
         actualStart,
         actualEnd,
-        hours: shiftHours(actualStart, actualEnd),
+        hours: effectiveShiftHours({ ...entry, actualStart, actualEnd }),
         status: "approved",
-        approvedAt: entry.actualApprovedAt || new Date().toLocaleString([], { dateStyle: "short", timeStyle: "short" }),
+        approvedAt: entry.actualApprovedAt || sourceRef,
         approvedBy: "user",
         sourceRef
+      };
+    }
+
+    function syncApprovedScheduleActualsToLedger() {
+      let changed = false;
+      Object.values(state.schedules || {}).forEach((schedule) => {
+        Object.entries(schedule.roster || {}).forEach(([date, entries]) => {
+          entries.forEach((entry) => {
+            if (!entry.staffId || !entry.actualApproved) return;
+            const record = legacyActualShiftRecord(entry, date, "legacy-schedule-actuals-sync");
+            if (ledgerShiftEquivalentExists(record)) return;
+            upsertLedgerShift(record);
+            changed = true;
+          });
+        });
       });
+      if (!changed) return false;
+      state.guards = { ...(state.guards || {}) };
+      state.guards.legacyActualHoursLedgerSync20260121v1 = new Date().toISOString();
+      state.repairs = Array.isArray(state.repairs) ? state.repairs : [];
+      state.repairs.push({
+        id: "repair_legacyActualHoursLedgerSync20260121v1",
+        guardFlag: "legacyActualHoursLedgerSync20260121v1",
+        appliedAt: state.guards.legacyActualHoursLedgerSync20260121v1,
+        description: "Synced approved legacy roster actual hours into ledger shifts without duplicating equivalent existing shifts.",
+        affects: ["ledger.shifts"]
+      });
+      return true;
+    }
+
+    function syncActualShiftToLedger(entry, date, sourceRef) {
+      if (!entry.staffId || !entry.actualApproved) return;
+      upsertLedgerShift(legacyActualShiftRecord(entry, date, sourceRef));
     }
 
     function ledgerCashMovement(date, type) {
@@ -2099,6 +2208,67 @@
           sourceRef
         });
       }
+    }
+
+    function ledgerCashflowEquivalentExists(date, field, value) {
+      const amount = numberValue(value);
+      if (["openingCash", "midCash", "closingCash"].includes(field)) {
+        const typeByField = {
+          openingCash: "opening_count",
+          midCash: "checkpoint_count",
+          closingCash: "closing_count"
+        };
+        return (ledger().cashMovements || []).some((movement) => (
+          movement.date === date &&
+          movement.type === typeByField[field] &&
+          Math.abs(numberValue(movement.amount) - amount) < 0.005
+        ));
+      }
+      if (field === "previousTerminal") {
+        const previousDate = isoDate(addDays(new Date(`${date}T00:00:00`), -1));
+        return (ledger().terminalReports || []).some((report) => (
+          report.forDate === previousDate &&
+          report.reportedOn === date &&
+          report.kind === "closing" &&
+          Math.abs(numberValue(report.amount) - amount) < 0.005
+        ));
+      }
+      const kindByField = { midTerminal: "after_shift", closingTerminal: "closing" };
+      if (kindByField[field]) {
+        return (ledger().terminalReports || []).some((report) => (
+          report.forDate === date &&
+          report.kind === kindByField[field] &&
+          Math.abs(numberValue(report.amount) - amount) < 0.005
+        ));
+      }
+      return true;
+    }
+
+    function syncLegacyCashflowToLedger() {
+      let changed = false;
+      Object.values(state.schedules || {}).forEach((schedule) => {
+        Object.entries(schedule.cashflow || {}).forEach(([date, dayData]) => {
+          const day = normalizeCashflowDay(dayData);
+          ["openingCash", "midCash", "closingCash", "previousTerminal", "midTerminal", "closingTerminal"].forEach((field) => {
+            if (!hasNumberInput(day[field])) return;
+            if (ledgerCashflowEquivalentExists(date, field, day[field])) return;
+            syncLedgerCashflowField(date, field, day[field], "legacy-cashflow-sync");
+            changed = true;
+          });
+        });
+      });
+      if (!changed) return false;
+      state.guards = { ...(state.guards || {}) };
+      state.guards.legacyCashflowLedgerSync20260121v1 = new Date().toISOString();
+      state.repairs = Array.isArray(state.repairs) ? state.repairs : [];
+      state.repairs.push({
+        id: "repair_legacyCashflowLedgerSync20260121v1",
+        guardFlag: "legacyCashflowLedgerSync20260121v1",
+        appliedAt: state.guards.legacyCashflowLedgerSync20260121v1,
+        description: "Synced legacy cashflow checkpoints and terminal totals into ledger without duplicating equivalent records.",
+        affects: ["ledger.cashMovements", "ledger.terminalReports"]
+      });
+      return true;
     }
 
     function cashflowTotalsForDay(day, date = selectedCashflowDate(), schedule = currentSchedule()) {
@@ -4659,10 +4829,14 @@
     const staff_aPriorPeriodPaymentApplied = applyStaffAPriorPeriodPayment20260121();
     const ownerPreviousWeekPaymentsRepairApplied = repairPreviousWeekOwnerPayments20260121();
     const previousWeekRosterActualsRepairApplied = repairPreviousWeekRosterActuals20260121();
+    const legacyActualHoursLedgerSyncApplied = syncApprovedScheduleActualsToLedger();
+    const legacyPayrollPaymentsLedgerSyncApplied = syncApprovedSchedulePaymentsToLedger();
+    const legacyCashflowLedgerSyncApplied = syncLegacyCashflowToLedger();
+    if (legacyActualHoursLedgerSyncApplied || legacyPayrollPaymentsLedgerSyncApplied || legacyCashflowLedgerSyncApplied) saveState();
     createMandatoryDailyBackup("startup daily check");
     renderAll();
     window.addEventListener("hashchange", applyRoute);
-    if (legacyMigrationProtectionApplied || journalDataApplied || rosterCorrectionApplied || financeLedgerApplied || payrollActualsCorrectionApplied || staff_aPayrollCorrectionApplied || ownerPayrollCorrectionApplied || confirmedFinanceImportApplied || openingCash20260116Applied || cashflowPayroll20260116Applied || cashCorrection20260116Applied || staff_aPriorPeriodPaymentApplied || ownerPreviousWeekPaymentsRepairApplied || previousWeekRosterActualsRepairApplied) {
+    if (legacyMigrationProtectionApplied || journalDataApplied || rosterCorrectionApplied || financeLedgerApplied || payrollActualsCorrectionApplied || staff_aPayrollCorrectionApplied || ownerPayrollCorrectionApplied || confirmedFinanceImportApplied || openingCash20260116Applied || cashflowPayroll20260116Applied || cashCorrection20260116Applied || staff_aPriorPeriodPaymentApplied || ownerPreviousWeekPaymentsRepairApplied || previousWeekRosterActualsRepairApplied || legacyActualHoursLedgerSyncApplied || legacyPayrollPaymentsLedgerSyncApplied || legacyCashflowLedgerSyncApplied) {
       showStatus("Journal data restored: shifts, approved hours, payments, and cash opening balance updated.", { toast: true });
     }
 
